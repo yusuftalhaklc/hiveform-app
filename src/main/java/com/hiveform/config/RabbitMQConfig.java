@@ -1,3 +1,4 @@
+
 package com.hiveform.config;
 
 import org.springframework.amqp.core.Queue;
@@ -10,6 +11,8 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitMQConfig {
     public static final String QUEUE_NAME = "defaultQueue";
+    public static final String MAIL_QUEUE = "mail.queue";
+
 
     @Bean
     Queue queue() {
@@ -17,8 +20,19 @@ public class RabbitMQConfig {
     }
 
     @Bean
+    Queue mailQueue() {
+        return new Queue(MAIL_QUEUE, false);
+    }
+
+
+    @Bean
     ConnectionFactory connectionFactory() {
-        return new CachingConnectionFactory();
+        CachingConnectionFactory factory = new CachingConnectionFactory();
+        factory.setHost("localhost");
+        factory.setPort(5672);
+        factory.setUsername("guest");
+        factory.setPassword("guest");
+        return factory;
     }
 
     @Bean

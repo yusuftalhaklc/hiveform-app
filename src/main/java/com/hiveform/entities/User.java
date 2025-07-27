@@ -1,3 +1,4 @@
+
 package com.hiveform.entities;
 
 import java.time.LocalDateTime;
@@ -63,6 +64,9 @@ public class User {
 
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
+
+    @Column(name = "email_verification_code", length = 40)
+    private String emailVerificationCode;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
