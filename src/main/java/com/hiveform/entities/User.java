@@ -57,6 +57,12 @@ public class User {
 
     @Column(name = "reset_token_expiry")
     private LocalDateTime resetTokenExpiry;
+    
+    @Column(name = "refresh_token", unique = true, length = 64)
+    private String refreshToken;
+    
+    @Column(name = "refresh_token_expiry")
+    private LocalDateTime refreshTokenExpiry;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false, length = 20)
