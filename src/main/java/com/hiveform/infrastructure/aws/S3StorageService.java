@@ -1,17 +1,17 @@
 package com.hiveform.infrastructure.aws;
 
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
 
-@Service
-@RequiredArgsConstructor
+@Component
 public class S3StorageService {
 
-    private final S3Client s3Client;
+    @Autowired
+    private S3Client s3Client;
 
     @Value("${aws.s3.bucket}")
     private String bucketName;

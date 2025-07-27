@@ -40,8 +40,8 @@ public class Question {
     @Column(name = "description", columnDefinition = "TEXT", nullable = true)
     private String description;
     
-    @Column(name = "order", nullable = false)
-    private Integer order;
+    @Column(name = "question_index", nullable = false)
+    private Integer questionIndex;
     
     @Column(name = "image_url")
     private String imageUrl;
