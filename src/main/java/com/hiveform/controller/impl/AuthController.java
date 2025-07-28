@@ -35,14 +35,14 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<String>> register(@Valid @RequestBody DtoRegisterIU registerRequestDto, HttpServletRequest request) {
-        String message = authService.register(registerRequestDto);
-        return ResponseEntity.ok(RootResponse.success(message, "Registration successful", request.getRequestURI()));
+        authService.register(registerRequestDto);
+        return ResponseEntity.ok(RootResponse.success(null, "Registration successful and email verification sent", request.getRequestURI()));
     }
 
     @PostMapping("/verify")
-    public ResponseEntity<ApiResponse<String>> verifyEmail(@Valid @RequestBody DtoVerifyEmailIU dto, HttpServletRequest request) {
-        String result = authService.verifyEmail(dto);
-        return ResponseEntity.ok(RootResponse.success(result, "Email verification result", request.getRequestURI()));
+    public ResponseEntity<ApiResponse<Void>> verifyEmail(@Valid @RequestBody DtoVerifyEmailIU dto, HttpServletRequest request) {
+        authService.verifyEmail(dto);
+        return ResponseEntity.ok(RootResponse.success(null, "Email verification successful", request.getRequestURI()));
     }
 
     @PostMapping("/google")

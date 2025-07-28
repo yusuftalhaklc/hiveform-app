@@ -8,7 +8,7 @@ import com.hiveform.dto.auth.DtoLoginIU;
 import com.hiveform.dto.auth.DtoAuthResponse;
 
 public interface IAuthService {
-    String register(DtoRegisterIU registerRequestDto);
-    String verifyEmail(DtoVerifyEmailIU verifyEmailRequestDto);
+    void register(DtoRegisterIU registerRequestDto);
+    void verifyEmail(DtoVerifyEmailIU verifyEmailRequestDto);
     DtoAuthResponse login(DtoLoginIU loginRequestDto);
 }

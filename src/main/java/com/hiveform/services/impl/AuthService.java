@@ -6,10 +6,11 @@ import com.hiveform.dto.auth.DtoLoginIU;
 import com.hiveform.dto.auth.DtoAuthResponse;
 import com.hiveform.security.JwtUtil;
 import com.hiveform.security.JwtClaim;
-import org.springframework.beans.factory.annotation.Value;
 import com.hiveform.entities.User;
 import com.hiveform.repository.UserRepository;
 import com.hiveform.services.IAuthService;
+import com.hiveform.services.IEmailService;
+
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -24,10 +25,18 @@ import com.hiveform.handler.ForbiddenException;
 
 @Service
 public class AuthService implements IAuthService {
+
     @Autowired
     private JwtUtil jwtUtil;
-    @Value("${jwt.expiration:86400000}")
-    private long jwtExpiration;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private IEmailService emailService;
 
     @Override
     public DtoAuthResponse login(DtoLoginIU loginRequestDto) {
@@ -71,27 +80,8 @@ public class AuthService implements IAuthService {
 
     }
 
-    private String generateSecureRefreshToken() {
-        SecureRandom secureRandom = new SecureRandom();
-        StringBuilder token = new StringBuilder(64);
-        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
-        for (int i = 0; i < 64; i++) {
-            token.append(chars.charAt(secureRandom.nextInt(chars.length())));
-        }
-        return token.toString();
-    }
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private EmailService emailService;
-
     @Override
-    public String register(DtoRegisterIU registerRequestDto) {
+    public void register(DtoRegisterIU registerRequestDto) {
         if (userRepository.findByEmail(registerRequestDto.getEmail()) != null) {
             throw new UnauthorizedException("A user with this email already exists.");
         }
@@ -115,12 +105,10 @@ public class AuthService implements IAuthService {
         userRepository.save(user);
 
         emailService.sendVerificationEmail(user.getEmail(), verificationCode);
-
-        return "User registered successfully. Please verify your email address.";
     }
 
     @Override
-    public String verifyEmail(DtoVerifyEmailIU dto) {
+    public void verifyEmail(DtoVerifyEmailIU dto) {
         User user = userRepository.findByEmail(dto.getEmail());
         if (user == null) {
             throw new ResourceNotFoundException("User not found.");
@@ -132,6 +120,15 @@ public class AuthService implements IAuthService {
         user.setEmailVerified(true);
         user.setEmailVerificationCode(null);
         userRepository.save(user);
-        return "Email verified successfully.";
+    }
+
+    private String generateSecureRefreshToken() {
+        SecureRandom secureRandom = new SecureRandom();
+        StringBuilder token = new StringBuilder(64);
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+        for (int i = 0; i < 64; i++) {
+            token.append(chars.charAt(secureRandom.nextInt(chars.length())));
+        }
+        return token.toString();
     }
 }
