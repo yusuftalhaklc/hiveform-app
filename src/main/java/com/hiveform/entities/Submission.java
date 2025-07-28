@@ -1,6 +1,5 @@
 package com.hiveform.entities;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -31,7 +30,7 @@ public class Submission {
     private UUID id;
 
     @Column(name = "submitted_at")
-    private LocalDateTime submittedAt;
+    private Long submittedAt;
 
     @ManyToOne
     @JoinColumn(name = "form_id", nullable = false)

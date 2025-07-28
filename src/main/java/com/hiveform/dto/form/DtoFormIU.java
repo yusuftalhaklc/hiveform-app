@@ -1,6 +1,5 @@
 package com.hiveform.dto.form;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 import com.hiveform.dto.question.DtoQuestionIU;
@@ -30,7 +29,7 @@ public class DtoFormIU {
     @NotNull(message = "Is public status is required")
     private Boolean isPublic;
     
-    private LocalDateTime expiresAt;
+    private Long expiresAt;
     
     @Valid
     private List<DtoQuestionIU> questions;
@@ -39,5 +38,5 @@ public class DtoFormIU {
     private String userId;
 
     @JsonIgnore
-    private String formId; 
+    private String formId;
 }

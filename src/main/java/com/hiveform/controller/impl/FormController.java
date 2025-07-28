@@ -49,6 +49,8 @@ public class FormController implements IFormController {
     @PutMapping("/{formId}")
     @Override
     public ResponseEntity<ApiResponse<DtoFormIUResponse>> updateForm(@Valid @RequestBody DtoFormUpdate updateFormRequestDto, @PathVariable String formId, @AuthenticationPrincipal JwtClaim jwtClaim, HttpServletRequest request) {
+        updateFormRequestDto.setFormId(formId);
+        updateFormRequestDto.setUserId(jwtClaim.getUserId());
         DtoFormIUResponse response = formService.updateForm(updateFormRequestDto, jwtClaim.getUserId());
         return ResponseEntity.ok(RootResponse.success(response, "Form updated successfully", request.getRequestURI()));
     }

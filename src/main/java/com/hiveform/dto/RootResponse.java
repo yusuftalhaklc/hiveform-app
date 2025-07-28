@@ -12,7 +12,7 @@ public class RootResponse {
         response.setData(data);
         response.setErrors(null);
         response.setErrorCode(0);
-        response.setTimestamp(System.currentTimeMillis());
+        response.setTimestamp(System.currentTimeMillis()/1000);
         response.setPath(path);
         return response;
     }
@@ -24,7 +24,7 @@ public class RootResponse {
         response.setData(null);
         response.setErrors(errors);
         response.setErrorCode(errorCode);
-        response.setTimestamp(System.currentTimeMillis());
+        response.setTimestamp(System.currentTimeMillis()/1000);
         response.setPath(path);
         return response;
     }

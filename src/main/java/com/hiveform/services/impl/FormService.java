@@ -98,10 +98,16 @@ public class FormService implements IFormService {
         }
         form.setTitle(updateFormRequestDto.getTitle());
         form.setDescription(updateFormRequestDto.getDescription());
-        form.setBannerImageUrl(updateFormRequestDto.getBannerImageUrl());
-        form.setIsActive(updateFormRequestDto.getIsActive());
-        form.setIsPublic(updateFormRequestDto.getIsPublic());
-        form.setExpiresAt(updateFormRequestDto.getExpiresAt());
+        form.setIsActive(updateFormRequestDto.getIsActive() != null ? updateFormRequestDto.getIsActive() : form.getIsActive());
+        form.setIsPublic(updateFormRequestDto.getIsPublic() != null ? updateFormRequestDto.getIsPublic() : form.getIsPublic());
+
+        if (updateFormRequestDto.getBannerImageUrl() != null) {
+            form.setBannerImageUrl(updateFormRequestDto.getBannerImageUrl());
+        }
+
+        if (updateFormRequestDto.getExpiresAt() != null) {
+            form.setExpiresAt(updateFormRequestDto.getExpiresAt());
+        }
 
         Form updatedForm = formRepository.save(form);
         DtoFormIUResponse response = new DtoFormIUResponse();

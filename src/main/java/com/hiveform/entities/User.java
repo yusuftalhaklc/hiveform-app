@@ -1,11 +1,7 @@
 
 package com.hiveform.entities;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
-
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import com.hiveform.enums.AuthProvider;
 import com.hiveform.enums.UserRole;
@@ -17,6 +13,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -56,13 +54,13 @@ public class User {
     private String resetToken;
 
     @Column(name = "reset_token_expiry")
-    private LocalDateTime resetTokenExpiry;
+    private Long resetTokenExpiry;
     
     @Column(name = "refresh_token", unique = true, length = 64)
     private String refreshToken;
     
     @Column(name = "refresh_token_expiry")
-    private LocalDateTime refreshTokenExpiry;
+    private Long refreshTokenExpiry;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false, length = 20)
@@ -74,12 +72,21 @@ public class User {
     @Column(name = "email_verification_code", length = 40)
     private String emailVerificationCode;
 
-    @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private Long createdAt;
 
-    @UpdateTimestamp
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    private Long updatedAt;
 
+    @PrePersist
+    protected void onCreate() {
+        long timestamp = System.currentTimeMillis() / 1000;
+        createdAt = timestamp;
+        updatedAt = timestamp;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = System.currentTimeMillis() / 1000;
+    }
 }

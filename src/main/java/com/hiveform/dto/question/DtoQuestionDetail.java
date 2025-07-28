@@ -1,6 +1,5 @@
 package com.hiveform.dto.question;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 import lombok.Data;
@@ -16,6 +15,6 @@ public class DtoQuestionDetail {
     private String type;
     private Boolean isRequired;
     private List<String> options;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private Long createdAt;
+    private Long updatedAt;
 }

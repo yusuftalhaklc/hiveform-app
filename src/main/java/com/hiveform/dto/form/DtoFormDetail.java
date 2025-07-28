@@ -1,6 +1,5 @@
 package com.hiveform.dto.form;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 import com.hiveform.dto.question.DtoQuestionDetail;
@@ -17,9 +16,9 @@ public class DtoFormDetail {
     private String bannerImageUrl;
     private Boolean isActive;
     private Boolean isPublic;
-    private LocalDateTime expiresAt;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private Long expiresAt;
+    private Long createdAt;
+    private Long updatedAt;
     private List<DtoQuestionDetail> questions;
     private DtoUserInfo createdBy;
 }

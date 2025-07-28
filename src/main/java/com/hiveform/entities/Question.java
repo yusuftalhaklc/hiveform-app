@@ -1,11 +1,7 @@
 package com.hiveform.entities;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
-
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import com.hiveform.enums.QuestionType;
 
@@ -18,6 +14,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
 import lombok.AllArgsConstructor;
@@ -56,16 +54,25 @@ public class Question {
     @Column(name = "options")
     private List<String> options;
     
-    @CreationTimestamp
     @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    private Long createdAt;
     
-    @UpdateTimestamp
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    private Long updatedAt;
     
     @ManyToOne
     @JoinColumn(name = "form_id", nullable = false)
     private Form form;
 
+    @PrePersist
+    protected void onCreate() {
+        long timestamp = System.currentTimeMillis() / 1000;
+        createdAt = timestamp;
+        updatedAt = timestamp;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = System.currentTimeMillis() / 1000;
+    }
 }

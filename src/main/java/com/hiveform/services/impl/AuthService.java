@@ -18,7 +18,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.UUID;
 import java.security.SecureRandom;
-import java.time.LocalDateTime;
 import com.hiveform.handler.ResourceNotFoundException;
 import com.hiveform.handler.UnauthorizedException;
 import com.hiveform.handler.ForbiddenException;
@@ -61,7 +60,7 @@ public class AuthService implements IAuthService {
 
         String refreshToken = generateSecureRefreshToken();
         user.setRefreshToken(refreshToken);
-        user.setRefreshTokenExpiry(LocalDateTime.now().plusDays(30));
+        user.setRefreshTokenExpiry(System.currentTimeMillis() / 1000 + (30 * 24 * 60 * 60));
         userRepository.save(user);
 
         DtoAuthResponse response = new DtoAuthResponse();

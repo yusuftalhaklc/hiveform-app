@@ -1,10 +1,6 @@
 package com.hiveform.entities;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
-
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -13,6 +9,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -50,15 +48,13 @@ public class Form {
     private Boolean isPublic = false;
 
     @Column(name = "expires_at")
-    private LocalDateTime expiresAt;
+    private Long expiresAt;
     
-    @CreationTimestamp
     @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    private Long createdAt;
     
-    @UpdateTimestamp
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    private Long updatedAt;
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
@@ -67,4 +63,15 @@ public class Form {
     @OneToMany(mappedBy = "form")
     private List<Question> questions;
 
+    @PrePersist
+    protected void onCreate() {
+        long timestamp = System.currentTimeMillis() / 1000;
+        createdAt = timestamp;
+        updatedAt = timestamp;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = System.currentTimeMillis() / 1000;
+    }
 }
