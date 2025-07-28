@@ -11,6 +11,8 @@ import com.hiveform.entities.Form;
 import com.hiveform.repository.FormRepository;
 import com.hiveform.services.IFormService;
 import com.hiveform.entities.User;
+import com.hiveform.handler.ResourceNotFoundException;
+import com.hiveform.handler.UnauthorizedException;
 import com.hiveform.entities.Question;
 import com.hiveform.repository.UserRepository;
 import com.hiveform.repository.QuestionRepository;
@@ -38,7 +40,7 @@ public class FormService implements IFormService {
     public DtoFormIUResponse createForm(DtoFormIU createFormRequestDto) {
         Optional<User> optionalUser = userRepository.findById(UUID.fromString(createFormRequestDto.getUserId()));
         if (optionalUser.isEmpty()) {
-            throw new IllegalArgumentException("User not found with ID: " + createFormRequestDto.getUserId());    
+            throw new UnauthorizedException("User not found with ID: " + createFormRequestDto.getUserId());    
         }
 
         User user = optionalUser.get();
@@ -80,18 +82,18 @@ public class FormService implements IFormService {
     public DtoFormIUResponse updateForm(DtoFormIU updateFormRequestDto) {
         Optional<User> optionalUser = userRepository.findById(UUID.fromString(updateFormRequestDto.getUserId()));
         if (optionalUser.isEmpty()) {
-            throw new IllegalArgumentException("User not found with ID: " + updateFormRequestDto.getUserId());    
+            throw new UnauthorizedException("User not found with ID: " + updateFormRequestDto.getUserId());    
         }
         Optional<Form> optionalForm = formRepository.findById(UUID.fromString(updateFormRequestDto.getFormId()));
         if (optionalForm.isEmpty()) {
-            throw new IllegalArgumentException("Form not found with ID: " + updateFormRequestDto.getFormId());
+            throw new ResourceNotFoundException("Form not found with ID: " + updateFormRequestDto.getFormId());
         }
 
         User user = optionalUser.get();
         Form form = optionalForm.get();
 
         if (!form.getUser().getId().equals(user.getId())) {
-            throw new IllegalArgumentException("User does not have permission to update this form");
+            throw new UnauthorizedException("User does not have permission to update this form");
         }
 
         form.setTitle(updateFormRequestDto.getTitle());
@@ -113,7 +115,7 @@ public class FormService implements IFormService {
     public DtoFormDetail getFormByShortLink(String shortLink) {
         Optional<Form> optionalForm = formRepository.findByShortLink(shortLink);
         if (optionalForm.isEmpty()) {
-            throw new IllegalArgumentException("Form not found with short link: " + shortLink);
+            throw new ResourceNotFoundException("Form not found with short link: " + shortLink);
         }
 
         Form form = optionalForm.get();
@@ -149,18 +151,18 @@ public class FormService implements IFormService {
     public void deleteFormById(DtoFormDelete deleteRequest) {
         Optional<User> optionalUser = userRepository.findById(UUID.fromString(deleteRequest.getUserId()));
         if (optionalUser.isEmpty()) {
-            throw new IllegalArgumentException("User not found with ID: " + deleteRequest.getUserId());    
+            throw new UnauthorizedException("User not found with ID: " + deleteRequest.getUserId());    
         }
         Optional<Form> optionalForm = formRepository.findById(UUID.fromString(deleteRequest.getFormId()));
         if (optionalForm.isEmpty()) {
-            throw new IllegalArgumentException("Form not found with ID: " + deleteRequest.getFormId());
+            throw new ResourceNotFoundException("Form not found with ID: " + deleteRequest.getFormId());
         }
 
         User user = optionalUser.get();
         Form form = optionalForm.get();
 
         if (!form.getUser().getId().equals(user.getId())) {
-            throw new IllegalArgumentException("User does not have permission to delete this form");
+            throw new UnauthorizedException("User does not have permission to delete this form");
         }
 
         formRepository.delete(form);

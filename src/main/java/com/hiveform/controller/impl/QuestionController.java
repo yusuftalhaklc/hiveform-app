@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.hiveform.controller.IQuestionController;
 
 @RestController
-@RequestMapping("/api/question")
+@RequestMapping("/api/form/{formId}/question")
 public class QuestionController implements IQuestionController {
 
 }

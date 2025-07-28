@@ -5,6 +5,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.hiveform.controller.IFormController;
 import com.hiveform.dto.form.DtoFormIUResponse;
+import com.hiveform.dto.ApiResponse;
+import com.hiveform.dto.ResponseUtil;
 import com.hiveform.dto.form.DtoFormDelete;
 import com.hiveform.dto.form.DtoFormDetail;
 import com.hiveform.dto.form.DtoFormIU;
@@ -13,6 +15,7 @@ import com.hiveform.services.IFormService;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -31,15 +34,15 @@ public class FormController implements IFormController {
     private IFormService formService;
 
     @PostMapping("")
-    public DtoFormIUResponse createForm(@RequestBody DtoFormIU createFormRequestDto, HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<DtoFormIUResponse>> createForm(@Valid @RequestBody DtoFormIU createFormRequestDto, HttpServletRequest request) {
         String userId = (String) request.getAttribute("userId");
         createFormRequestDto.setUserId(userId);
-        return formService.createForm(createFormRequestDto);
+        return ResponseEntity.ok(ResponseUtil.success(formService.createForm(createFormRequestDto), "Form created successfully",request.getRequestURI()));
     }
 
     @GetMapping("/{shortLink}")
-    public DtoFormDetail getFormByShortLink(@PathVariable String shortLink) {
-        return formService.getFormByShortLink(shortLink);
+    public ResponseEntity<ApiResponse<DtoFormDetail>> getFormByShortLink(@PathVariable String shortLink, HttpServletRequest request) {
+        return ResponseEntity.ok(ResponseUtil.success(formService.getFormByShortLink(shortLink), "Form retrieved successfully",request.getRequestURI()));
     }
 
     @DeleteMapping("/{formId}")
@@ -50,7 +53,7 @@ public class FormController implements IFormController {
         deleteRequest.setFormId(formId);
         deleteRequest.setUserId(userId);
         formService.deleteFormById(deleteRequest);
-        throw new UnsupportedOperationException("Unimplemented method 'deleteFormById'");
+        return ResponseEntity.ok(ResponseUtil.success(null, "Form deleted successfully",request.getRequestURI()));
     }
 
 }

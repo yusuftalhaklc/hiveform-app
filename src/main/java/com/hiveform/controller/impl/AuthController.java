@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.hiveform.services.IAuthService;
 
+import jakarta.validation.Valid;
+
 import com.hiveform.dto.auth.DtoForgotPasswordIU;
 import com.hiveform.dto.auth.DtoGoogleAuthIU;
 import com.hiveform.dto.auth.DtoLoginIU;
@@ -21,18 +23,18 @@ public class AuthController {
     private IAuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody DtoLoginIU loginRequestDto) {
+    public ResponseEntity<?> login(@Valid @RequestBody DtoLoginIU loginRequestDto) {
         return ResponseEntity.ok(authService.login(loginRequestDto));
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody DtoRegisterIU registerRequestDto) {
+    public ResponseEntity<String> register(@Valid @RequestBody DtoRegisterIU registerRequestDto) {
         String message = authService.register(registerRequestDto);
         return ResponseEntity.ok(message);
     }
 
     @PostMapping("/verify")
-    public ResponseEntity<String> verifyEmail(@RequestBody DtoVerifyEmailIU dto) {
+    public ResponseEntity<String> verifyEmail(@Valid @RequestBody DtoVerifyEmailIU dto) {
         String result = authService.verifyEmail(dto);
         if (result.equals("E-posta başarıyla doğrulandı.")) {
             return ResponseEntity.ok(result);
@@ -42,7 +44,7 @@ public class AuthController {
     }
 
     @PostMapping("/google")
-    public ResponseEntity<?> google(@RequestBody DtoGoogleAuthIU googleAuthRequestDto) {
+    public ResponseEntity<?> google(@Valid @RequestBody DtoGoogleAuthIU googleAuthRequestDto) {
         // TODO: implement google auth logic
         return ResponseEntity.ok().build();
     }
@@ -54,13 +56,13 @@ public class AuthController {
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<?> forgotPassword(@RequestBody DtoForgotPasswordIU forgotPasswordRequestDto) {
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody DtoForgotPasswordIU forgotPasswordRequestDto) {
         // TODO: implement forgot password logic
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<?> resetPassword(@RequestBody DtoResetPasswordIU resetPasswordRequestDto) {
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody DtoResetPasswordIU resetPasswordRequestDto) {
         // TODO: implement reset password logic
         return ResponseEntity.ok().build();
     }
