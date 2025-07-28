@@ -18,6 +18,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import jakarta.persistence.OneToMany;
+import java.util.List;
+
 @Entity
 @Table(name = "forms")
 @Data
@@ -60,5 +63,8 @@ public class Form {
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
+    @OneToMany(mappedBy = "form")
+    private List<Question> questions;
 
 }

@@ -1,14 +1,14 @@
 package com.hiveform.services;
 
-import com.hiveform.dto.auth.RegisterRequestDto;
+import com.hiveform.dto.auth.DtoRegisterIU;
 
-import com.hiveform.dto.auth.VerifyEmailRequestDto;
+import com.hiveform.dto.auth.DtoVerifyEmailIU;
 
-import com.hiveform.dto.auth.LoginRequestDto;
-import com.hiveform.dto.auth.AuthResponseDto;
+import com.hiveform.dto.auth.DtoLoginIU;
+import com.hiveform.dto.auth.DtoAuthResponse;
 
 public interface IAuthService {
-    String register(RegisterRequestDto registerRequestDto);
-    String verifyEmail(VerifyEmailRequestDto verifyEmailRequestDto);
-    AuthResponseDto login(LoginRequestDto loginRequestDto);
+    String register(DtoRegisterIU registerRequestDto);
+    String verifyEmail(DtoVerifyEmailIU verifyEmailRequestDto);
+    DtoAuthResponse login(DtoLoginIU loginRequestDto);
 }

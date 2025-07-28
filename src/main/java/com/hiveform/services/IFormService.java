@@ -1,10 +1,13 @@
 package com.hiveform.services;
 
-import com.hiveform.entities.Form;
-import java.util.UUID;
+import com.hiveform.dto.form.DtoFormDelete;
+import com.hiveform.dto.form.DtoFormIU;
+import com.hiveform.dto.form.DtoFormIUResponse;
+import com.hiveform.dto.form.DtoFormDetail;
 
 public interface IFormService {
-    Form createForm(Form form);
-    Form updateForm(UUID id, Form form);
-    void deleteForm(UUID id);
+    DtoFormIUResponse createForm(DtoFormIU createFormRequestDto);
+    DtoFormIUResponse updateForm(DtoFormIU updateFormRequestDto);
+    DtoFormDetail getFormByShortLink(String shortLink);
+    void deleteFormById(DtoFormDelete deleteRequest);
 }

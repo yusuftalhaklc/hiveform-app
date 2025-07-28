@@ -1,4 +1,4 @@
-package com.hiveform.dto;
+package com.hiveform.dto.mail;
 
 import java.io.Serializable;
 

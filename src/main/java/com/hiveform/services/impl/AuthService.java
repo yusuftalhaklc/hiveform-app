@@ -1,9 +1,9 @@
 package com.hiveform.services.impl;
 
-import com.hiveform.dto.auth.RegisterRequestDto;
-import com.hiveform.dto.auth.VerifyEmailRequestDto;
-import com.hiveform.dto.auth.LoginRequestDto;
-import com.hiveform.dto.auth.AuthResponseDto;
+import com.hiveform.dto.auth.DtoRegisterIU;
+import com.hiveform.dto.auth.DtoVerifyEmailIU;
+import com.hiveform.dto.auth.DtoLoginIU;
+import com.hiveform.dto.auth.DtoAuthResponse;
 import com.hiveform.security.JwtUtil;
 import com.hiveform.security.JwtClaim;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -30,7 +30,7 @@ public class AuthService implements IAuthService {
     private long jwtExpiration;
 
     @Override
-    public AuthResponseDto login(LoginRequestDto loginRequestDto) {
+    public DtoAuthResponse login(DtoLoginIU loginRequestDto) {
         User user = userRepository.findByEmail(loginRequestDto.getEmail());
         if (user == null || !user.getIsActive() || !user.getEmailVerified()) {
             throw new BadCredentialsException("Kullanıcı bulunamadı veya aktif değil ya da e-posta doğrulanmamış.");
@@ -66,7 +66,7 @@ public class AuthService implements IAuthService {
         user.setRefreshTokenExpiry(LocalDateTime.now().plusDays(30));
         userRepository.save(user);
 
-        AuthResponseDto response = new AuthResponseDto();
+        DtoAuthResponse response = new DtoAuthResponse();
         response.setAccessToken(accessToken);
         response.setRefreshToken(refreshToken);
         response.setExpireAt(claim.getExp());
@@ -94,7 +94,7 @@ public class AuthService implements IAuthService {
     private EmailService emailService;
 
     @Override
-    public String register(RegisterRequestDto registerRequestDto) {
+    public String register(DtoRegisterIU registerRequestDto) {
         if (userRepository.findByEmail(registerRequestDto.getEmail()) != null) {
             throw new RuntimeException("Bu email ile kayıtlı bir kullanıcı zaten var.");
         }
@@ -123,7 +123,7 @@ public class AuthService implements IAuthService {
     }
 
     @Override
-    public String verifyEmail(VerifyEmailRequestDto dto) {
+    public String verifyEmail(DtoVerifyEmailIU dto) {
         User user = userRepository.findByEmail(dto.getEmail());
         if (user == null) {
             return "Kullanıcı bulunamadı.";

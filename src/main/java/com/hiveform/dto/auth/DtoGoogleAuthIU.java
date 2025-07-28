@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
-public class GoogleAuthRequestDto {
+public class DtoGoogleAuthIU {
 
     @NotBlank(message = "Code is required")
     private String code;

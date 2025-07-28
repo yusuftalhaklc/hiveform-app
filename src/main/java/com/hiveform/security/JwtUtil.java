@@ -38,6 +38,16 @@ public class JwtUtil {
         return generateToken(extraClaims, subject, jwtExpiration);
     }
 
+    public String generateTokenWithClaims(JwtClaim jwtClaim) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", jwtClaim.getUserId());
+        claims.put("email", jwtClaim.getEmail());
+        claims.put("fullname", jwtClaim.getFullname());
+        claims.put("role", jwtClaim.getRole());
+        
+        return generateToken(claims, jwtClaim.getEmail(), jwtExpiration);
+    }
+
     public String generateToken(Map<String, Object> claims, String subject, long expirationMillis) {
         long now = System.currentTimeMillis();
         return Jwts.builder()
@@ -84,6 +94,23 @@ public class JwtUtil {
 
     public String extractIssuer(String token) {
         return extractClaim(token, Claims::getIssuer);
+    }
+
+    public String extractCustomClaim(String token, String claimName) {
+        return extractClaim(token, claims -> claims.get(claimName, String.class));
+    }
+
+    public JwtClaim extractJwtClaim(String token) {
+        Claims claims = extractAllClaims(token);
+        return JwtClaim.builder()
+                .userId(claims.get("userId", String.class))
+                .email(claims.get("email", String.class))
+                .fullname(claims.get("fullname", String.class))
+                .role(claims.get("role", String.class))
+                .exp(claims.getExpiration().getTime())
+                .iss(claims.getIssuer())
+                .iat(claims.getIssuedAt().getTime())
+                .build();
     }
 
     public boolean isTokenExpired(String token) {

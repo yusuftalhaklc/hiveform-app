@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hiveform.dto.MailDto;
+import com.hiveform.dto.mail.MailDto;
 
 @Component
 public class MailQueueConsumer {
