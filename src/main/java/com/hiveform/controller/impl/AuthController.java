@@ -58,11 +58,7 @@ public class AuthController {
     }
 
     @GetMapping("/google/authorize")
-    public ResponseEntity<ApiResponse<DtoAuthResponse>> googleCallback(
-            @RequestParam String code,
-            @RequestParam String state,
-            HttpServletRequest request) {
-        
+    public ResponseEntity<ApiResponse<DtoAuthResponse>> googleCallback(@RequestParam String code, @RequestParam String state, HttpServletRequest request) {
         DtoAuthResponse authResponse = googleOAuthService.handleOAuthCallback(code, state);
         return ResponseEntity.ok(RootResponse.success(authResponse, "Google authentication successful", request.getRequestURI()));
     }
