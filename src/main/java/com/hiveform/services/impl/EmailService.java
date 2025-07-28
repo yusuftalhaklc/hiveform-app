@@ -18,4 +18,12 @@ public class EmailService implements IEmailService {
         String mailRequest = to + "|" + subject + "|" + text;
         mailQueueProducer.sendMail(mailRequest);
     }
+
+    @Override
+    public void sendPasswordResetEmail(String to, String resetToken) {
+        String subject = "Şifre Sıfırlama";
+        String text = "Şifrenizi sıfırlamak için aşağıdaki kodu kullanın: " + resetToken + "\n\nBu kod 3 dakika geçerlidir.";
+        String mailRequest = to + "|" + subject + "|" + text;
+        mailQueueProducer.sendMail(mailRequest);
+    }
 }

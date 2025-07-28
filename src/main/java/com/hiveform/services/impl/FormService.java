@@ -17,6 +17,7 @@ import com.hiveform.handler.UnauthorizedException;
 import com.hiveform.entities.Question;
 import com.hiveform.repository.UserRepository;
 import com.hiveform.repository.QuestionRepository;
+import com.hiveform.utils.SecureTokenGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -38,6 +39,9 @@ public class FormService implements IFormService {
     @Autowired
     private QuestionRepository questionRepository;
 
+    @Autowired
+    private SecureTokenGenerator tokenGenerator;
+
     @Override
     @Transactional
     public DtoFormIUResponse createForm(DtoFormIU createFormRequestDto) {
@@ -56,8 +60,8 @@ public class FormService implements IFormService {
 
         String shortLink;
         do {
-            shortLink = generateShortLink(8);
-        } while (formRepository.existsByShortLink(shortLink));
+            shortLink = tokenGenerator.generateSecureToken(8);
+        } while (formRepository.findByShortLink(shortLink).isPresent());
 
         form.setShortLink(shortLink);
         Form savedForm = formRepository.save(form);
@@ -173,13 +177,5 @@ public class FormService implements IFormService {
         formRepository.delete(form);
     }
 
-    private String generateShortLink(int length) {
-        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < length; i++) {
-            int idx = (int) (Math.random() * chars.length());
-            sb.append(chars.charAt(idx));
-        }
-        return sb.toString();
-    }
+
 }

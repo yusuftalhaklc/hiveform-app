@@ -59,14 +59,14 @@ public class AuthController {
 
     @PostMapping("/forgot-password")
     public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody DtoForgotPasswordIU forgotPasswordRequestDto, HttpServletRequest request) {
-        // TODO: implement forgot password logic
-        return ResponseEntity.ok(RootResponse.success(null, "Forgot password not implemented", request.getRequestURI()));
+        authService.forgotPassword(forgotPasswordRequestDto);
+        return ResponseEntity.ok(RootResponse.success(null, "Password reset email sent if account exists", request.getRequestURI()));
     }
 
     @PostMapping("/reset-password")
     public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody DtoResetPasswordIU resetPasswordRequestDto, HttpServletRequest request) {
-        // TODO: implement reset password logic
-        return ResponseEntity.ok(RootResponse.success(null, "Reset password not implemented", request.getRequestURI()));
+        authService.resetPassword(resetPasswordRequestDto);
+        return ResponseEntity.ok(RootResponse.success(null, "Password reset successful", request.getRequestURI()));
     }
 
 }

@@ -50,12 +50,6 @@ public class User {
     @Column(name = "provider_id")
     private String providerId;
 
-    @Column(name = "reset_token", unique = true, length = 64)
-    private String resetToken;
-
-    @Column(name = "reset_token_expiry")
-    private Long resetTokenExpiry;
-    
     @Column(name = "refresh_token", unique = true, length = 64)
     private String refreshToken;
     
