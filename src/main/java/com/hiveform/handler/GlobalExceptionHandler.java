@@ -39,6 +39,12 @@ public class GlobalExceptionHandler {
         return RootResponse.error(Arrays.asList(ex.getMessage()), "Unauthorized", HttpStatus.UNAUTHORIZED.value(), request.getRequestURI());
     }
 
+    @ExceptionHandler(ForbiddenException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ApiResponse<Object> handleForbiddenException(ForbiddenException ex, HttpServletRequest request) {
+        return RootResponse.error(Arrays.asList(ex.getMessage()), "Forbidden", HttpStatus.FORBIDDEN.value(), request.getRequestURI());
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiResponse<Object> handleValidationExceptions(MethodArgumentNotValidException ex, HttpServletRequest request) {

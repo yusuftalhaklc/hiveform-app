@@ -14,6 +14,11 @@ import com.hiveform.dto.auth.DtoLoginIU;
 import com.hiveform.dto.auth.DtoRegisterIU;
 import com.hiveform.dto.auth.DtoResetPasswordIU;
 import com.hiveform.dto.auth.DtoVerifyEmailIU;
+import com.hiveform.dto.auth.DtoAuthResponse;
+import com.hiveform.dto.ApiResponse;
+import com.hiveform.dto.RootResponse;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -23,48 +28,45 @@ public class AuthController {
     private IAuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody DtoLoginIU loginRequestDto) {
-        return ResponseEntity.ok(authService.login(loginRequestDto));
+    public ResponseEntity<ApiResponse<DtoAuthResponse>> login(@Valid @RequestBody DtoLoginIU loginRequestDto, HttpServletRequest request) {
+        DtoAuthResponse response = authService.login(loginRequestDto);
+        return ResponseEntity.ok(RootResponse.success(response, "Login successful", request.getRequestURI()));
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(@Valid @RequestBody DtoRegisterIU registerRequestDto) {
+    public ResponseEntity<ApiResponse<String>> register(@Valid @RequestBody DtoRegisterIU registerRequestDto, HttpServletRequest request) {
         String message = authService.register(registerRequestDto);
-        return ResponseEntity.ok(message);
+        return ResponseEntity.ok(RootResponse.success(message, "Registration successful", request.getRequestURI()));
     }
 
     @PostMapping("/verify")
-    public ResponseEntity<String> verifyEmail(@Valid @RequestBody DtoVerifyEmailIU dto) {
+    public ResponseEntity<ApiResponse<String>> verifyEmail(@Valid @RequestBody DtoVerifyEmailIU dto, HttpServletRequest request) {
         String result = authService.verifyEmail(dto);
-        if (result.equals("E-posta başarıyla doğrulandı.")) {
-            return ResponseEntity.ok(result);
-        } else {
-            return ResponseEntity.badRequest().body(result);
-        }
+        return ResponseEntity.ok(RootResponse.success(result, "Email verification result", request.getRequestURI()));
     }
 
     @PostMapping("/google")
-    public ResponseEntity<?> google(@Valid @RequestBody DtoGoogleAuthIU googleAuthRequestDto) {
+    public ResponseEntity<ApiResponse<Void>> google(@Valid @RequestBody DtoGoogleAuthIU googleAuthRequestDto, HttpServletRequest request) {
         // TODO: implement google auth logic
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(RootResponse.success(null, "Google auth not implemented", request.getRequestURI()));
     }
 
     @GetMapping("/google/callback")
-    public ResponseEntity<?> callback(@RequestParam(required = true) String code, @RequestParam(required = true) String state) {
+    public ResponseEntity<ApiResponse<Void>> callback(@RequestParam(required = true) String code, @RequestParam(required = true) String state, HttpServletRequest request) {
         // TODO: implement callback logic
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(RootResponse.success(null, "Google callback not implemented", request.getRequestURI()));
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<?> forgotPassword(@Valid @RequestBody DtoForgotPasswordIU forgotPasswordRequestDto) {
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody DtoForgotPasswordIU forgotPasswordRequestDto, HttpServletRequest request) {
         // TODO: implement forgot password logic
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(RootResponse.success(null, "Forgot password not implemented", request.getRequestURI()));
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<?> resetPassword(@Valid @RequestBody DtoResetPasswordIU resetPasswordRequestDto) {
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody DtoResetPasswordIU resetPasswordRequestDto, HttpServletRequest request) {
         // TODO: implement reset password logic
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(RootResponse.success(null, "Reset password not implemented", request.getRequestURI()));
     }
 
 }

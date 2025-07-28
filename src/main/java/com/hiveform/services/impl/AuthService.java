@@ -21,6 +21,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.UUID;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import com.hiveform.handler.ResourceNotFoundException;
+import com.hiveform.handler.UnauthorizedException;
+import com.hiveform.handler.ForbiddenException;
 
 @Service
 public class AuthService implements IAuthService {
@@ -32,12 +35,15 @@ public class AuthService implements IAuthService {
     @Override
     public DtoAuthResponse login(DtoLoginIU loginRequestDto) {
         User user = userRepository.findByEmail(loginRequestDto.getEmail());
-        if (user == null || !user.getIsActive() || !user.getEmailVerified()) {
-            throw new BadCredentialsException("Kullanıcı bulunamadı veya aktif değil ya da e-posta doğrulanmamış.");
-        }
 
-        if (!passwordEncoder.matches(loginRequestDto.getPassword(), user.getPassword())) {
-            throw new BadCredentialsException("Şifre hatalı.");
+        if (user == null || !passwordEncoder.matches(loginRequestDto.getPassword(), user.getPassword())) {
+            throw new UnauthorizedException("Email or password is incorrect.");
+        }
+        if (!user.getIsActive()) {
+            throw new ForbiddenException("User account is not active.");
+        }
+        if (!user.getEmailVerified()) {
+            throw new ForbiddenException("Email address is not verified.");
         }
 
         JwtClaim claim = JwtClaim.builder()
@@ -96,7 +102,7 @@ public class AuthService implements IAuthService {
     @Override
     public String register(DtoRegisterIU registerRequestDto) {
         if (userRepository.findByEmail(registerRequestDto.getEmail()) != null) {
-            throw new RuntimeException("Bu email ile kayıtlı bir kullanıcı zaten var.");
+            throw new UnauthorizedException("A user with this email already exists.");
         }
 
         User user = new User();
@@ -119,22 +125,22 @@ public class AuthService implements IAuthService {
 
         emailService.sendVerificationEmail(user.getEmail(), verificationCode);
 
-        return "Kullanıcı başarıyla oluşturuldu. Lütfen e-posta adresinizi doğrulayın.";
+        return "User registered successfully. Please verify your email address.";
     }
 
     @Override
     public String verifyEmail(DtoVerifyEmailIU dto) {
         User user = userRepository.findByEmail(dto.getEmail());
         if (user == null) {
-            return "Kullanıcı bulunamadı.";
+            throw new ResourceNotFoundException("User not found.");
         }
         if (user.getEmailVerificationCode() == null || !user.getEmailVerificationCode().equals(dto.getCode())) {
-            return "Doğrulama kodu hatalı.";
+            throw new UnauthorizedException("Invalid verification code.");
         }
 
         user.setEmailVerified(true);
         user.setEmailVerificationCode(null);
         userRepository.save(user);
-        return "E-posta başarıyla doğrulandı.";
+        return "Email verified successfully.";
     }
 }
