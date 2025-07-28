@@ -23,10 +23,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        
+        // Swagger endpoint'lerini tamamen atla
+        if (isSwaggerEndpoint(request.getRequestURI())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+        
         try {
             final String authHeader = request.getHeader("Authorization");
             
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                if (isPublicEndpoint(request.getRequestURI())) {
+                    filterChain.doFilter(request, response);
+                    return;
+                }
                 throw new AuthenticationRequiredException("Authorization header is required");
             }
             
@@ -52,5 +63,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
         
         filterChain.doFilter(request, response);
+    }
+    
+    private boolean isSwaggerEndpoint(String requestURI) {
+        return requestURI.startsWith("/swagger-ui/") ||
+               requestURI.equals("/swagger-ui.html") ||
+               requestURI.startsWith("/api-docs") ||
+               requestURI.equals("/api-docs.yaml") ||
+               requestURI.startsWith("/v3/api-docs/") ||
+               requestURI.startsWith("/webjars/") ||
+               requestURI.startsWith("/swagger-resources/") ||
+               requestURI.startsWith("/configuration/") ||
+               requestURI.equals("/favicon.ico");
+    }
+    
+    private boolean isPublicEndpoint(String requestURI) {
+        return requestURI.startsWith("/api/auth/") || 
+               requestURI.startsWith("/api/form/") && requestURI.matches(".*/\\w+$"); // Form görüntüleme
     }
 }

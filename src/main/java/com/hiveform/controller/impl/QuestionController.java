@@ -13,9 +13,11 @@ import com.hiveform.dto.RootResponse;
 import com.hiveform.security.JwtClaim;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/question")
+@Tag(name = "Question", description = "Question API")
 public class QuestionController {
 
     @Autowired
