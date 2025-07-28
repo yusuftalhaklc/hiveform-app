@@ -27,6 +27,13 @@ public class GlobalExceptionHandler {
         return RootResponse.error(Arrays.asList(ex.getMessage()), "An unexpected error occurred", HttpStatus.INTERNAL_SERVER_ERROR.value(), request.getRequestURI());
     }
 
+    @ExceptionHandler(AuthenticationRequiredException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ApiResponse<Object> handleAuthenticationRequiredException(AuthenticationRequiredException ex, HttpServletRequest request) {
+        String message = ex.getMessage() != null ? ex.getMessage() : "Authentication required";
+        return RootResponse.error(Arrays.asList(message), "Unauthorized", HttpStatus.UNAUTHORIZED.value(), request.getRequestURI());
+    }
+
     @ExceptionHandler(ResourceNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ApiResponse<Object> handleResourceNotFoundException(ResourceNotFoundException ex, HttpServletRequest request) {

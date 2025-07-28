@@ -11,7 +11,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
 
 @Component
 public class JwtUtil {
@@ -28,14 +27,6 @@ public class JwtUtil {
     private SecretKey getSigningKey() {
         byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
         return Keys.hmacShaKeyFor(keyBytes);
-    }
-
-    public String generateToken(String subject) {
-        return generateToken(new HashMap<>(), subject);
-    }
-
-    public String generateToken(Map<String, Object> extraClaims, String subject) {
-        return generateToken(extraClaims, subject, jwtExpiration);
     }
 
     public String generateTokenWithClaims(JwtClaim jwtClaim) {
@@ -63,6 +54,21 @@ public class JwtUtil {
                 .compact();
     }
 
+    public JwtClaim createJwtClaim(String userId, String email, String fullname, String role) {
+        long now = System.currentTimeMillis() / 1000;
+        long exp = (now + jwtExpiration / 1000);
+        
+        return JwtClaim.builder()
+                .userId(userId)
+                .email(email)
+                .fullname(fullname)
+                .role(role)
+                .iss(issuer)
+                .iat(now)
+                .exp(exp)
+                .build();
+    }
+
     public Claims extractAllClaims(String token) {
         return Jwts.parser()
                 .verifyWith(getSigningKey())
@@ -71,33 +77,8 @@ public class JwtUtil {
                 .getPayload();
     }
 
-    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = extractAllClaims(token);
-        return claimsResolver.apply(claims);
-    }
-
     public String extractEmail(String token) {
-        return extractClaim(token, Claims::getSubject);
-    }
-
-    public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject);
-    }
-
-    public Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
-    }
-
-    public Date extractIssuedAt(String token) {
-        return extractClaim(token, Claims::getIssuedAt);
-    }
-
-    public String extractIssuer(String token) {
-        return extractClaim(token, Claims::getIssuer);
-    }
-
-    public String extractCustomClaim(String token, String claimName) {
-        return extractClaim(token, claims -> claims.get(claimName, String.class));
+        return extractAllClaims(token).getSubject();
     }
 
     public JwtClaim extractJwtClaim(String token) {
@@ -114,12 +95,12 @@ public class JwtUtil {
     }
 
     public boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
+        return extractAllClaims(token).getExpiration().before(new Date());
     }
 
-    public boolean isTokenValid(String token, String username) {
-        final String extractedUsername = extractUsername(token);
-        return (extractedUsername.equals(username)) && !isTokenExpired(token);
+    public boolean isTokenValid(String token, String email) {
+        final String extractedEmail = extractEmail(token);
+        return (extractedEmail.equals(email)) && !isTokenExpired(token);
     }
 
     public long getExpirationTime() {

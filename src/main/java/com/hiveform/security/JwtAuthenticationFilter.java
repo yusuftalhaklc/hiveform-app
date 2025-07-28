@@ -6,15 +6,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import io.jsonwebtoken.Claims;
+import com.hiveform.handler.AuthenticationRequiredException;
 
 import java.io.IOException;
+import java.util.Collections;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -22,47 +21,49 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Autowired
     private JwtUtil jwtUtil;
 
-    @Autowired
-    private UserDetailsService userDetailsService;
-
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        final String authHeader = request.getHeader("Authorization");
-        String username = null;
-        String jwt = null;
-
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            jwt = authHeader.substring(7);
-            username = jwtUtil.extractUsername(jwt);
+        
+        try {
+            final String authHeader = request.getHeader("Authorization");
             
-            try {
-                Claims claims = jwtUtil.extractAllClaims(jwt);
-                
-                String userId = claims.get("userId", String.class);
-                String email = claims.get("email", String.class);
-                String fullname = claims.get("fullname", String.class);
-                String role = claims.get("role", String.class);
-                
-                request.setAttribute("userId", userId);
-                request.setAttribute("email", email);
-                request.setAttribute("fullname", fullname);
-                request.setAttribute("role", role);
-                
-            } catch (Exception e) {
-                logger.warn("Error extracting custom claims from JWT: " + e.getMessage());
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                if (isPublicEndpoint(request.getRequestURI())) {
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+                throw new AuthenticationRequiredException("Authorization header is required");
             }
-        }
-
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
-            if (jwtUtil.isTokenValid(jwt, userDetails.getUsername())) {
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+            
+            String jwt = authHeader.substring(7);
+            
+            if (jwtUtil.isTokenValid(jwt, jwtUtil.extractEmail(jwt))) {
+                JwtClaim jwtClaim = jwtUtil.extractJwtClaim(jwt);
+                
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                    jwtClaim,
+                    null,
+                    Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + jwtClaim.getRole()))
+                );
+                
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            } else {
+                logger.warn("Invalid JWT token provided");
+                throw new AuthenticationRequiredException("Invalid authentication token");
             }
+        } catch (AuthenticationRequiredException e) {
+            throw e;
+        } catch (Exception e) {
+            logger.error("JWT token validation failed: " + e.getMessage());
+            throw new AuthenticationRequiredException("Authentication required");
         }
+        
         filterChain.doFilter(request, response);
+    }
+    
+    private boolean isPublicEndpoint(String requestURI) {
+        return requestURI.startsWith("/api/auth/") || 
+               requestURI.startsWith("/api/form/") && requestURI.matches(".*/\\w+$"); // Form görüntüleme
     }
 }

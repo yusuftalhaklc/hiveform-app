@@ -10,12 +10,20 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.hiveform.security.JwtAuthenticationFilter;
+import com.hiveform.security.JwtAuthenticationEntryPoint;
+import com.hiveform.security.JwtAccessDeniedHandler;
 import com.hiveform.services.impl.CustomUserDetailsService;
 
 @Configuration
 public class SecurityConfig {
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @Autowired
+    private JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+
+    @Autowired
+    private JwtAccessDeniedHandler jwtAccessDeniedHandler;
 
     @Autowired
     private CustomUserDetailsService customUserDetailsService;
@@ -40,10 +48,17 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/form/**").permitAll() // Form görüntüleme için public
                 .anyRequest().authenticated()
+            )
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(exception -> exception
+                .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                .accessDeniedHandler(jwtAccessDeniedHandler)
             )
             .userDetailsService(customUserDetailsService)
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        
         return http.build();
     }
 }

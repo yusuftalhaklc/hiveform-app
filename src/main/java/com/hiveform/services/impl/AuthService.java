@@ -7,7 +7,6 @@ import com.hiveform.dto.auth.DtoAuthResponse;
 import com.hiveform.security.JwtUtil;
 import com.hiveform.security.JwtClaim;
 import org.springframework.beans.factory.annotation.Value;
-import java.util.HashMap;
 import com.hiveform.entities.User;
 import com.hiveform.repository.UserRepository;
 import com.hiveform.services.IAuthService;
@@ -38,35 +37,29 @@ public class AuthService implements IAuthService {
         if (user == null || !passwordEncoder.matches(loginRequestDto.getPassword(), user.getPassword())) {
             throw new UnauthorizedException("Email or password is incorrect.");
         }
+
         if (!user.getIsActive()) {
             throw new ForbiddenException("User account is not active.");
         }
+
         if (!user.getEmailVerified()) {
             throw new ForbiddenException("Email address is not verified.");
         }
 
-        JwtClaim claim = JwtClaim.builder()
-                .userId(user.getId().toString())
-                .email(user.getEmail())
-                .fullname(user.getFullName())
-                .role(user.getRole().name())
-                .iss("hiveform")
-                .iat(System.currentTimeMillis() / 1000)
-                .exp((System.currentTimeMillis() + jwtExpiration) / 1000)
-                .build();
+        if (user.getProvider() != com.hiveform.enums.AuthProvider.LOCAL) {
+            throw new UnauthorizedException("Please use " + user.getProvider().name().toLowerCase() + " authentication.");
+        }
 
-        HashMap<String, Object> claims = new HashMap<>();
-        claims.put("userId", claim.getUserId());
-        claims.put("email", claim.getEmail());
-        claims.put("fullname", claim.getFullname());
-        claims.put("role", claim.getRole());
-        claims.put("iss", claim.getIss());
-        claims.put("iat", claim.getIat());
-        claims.put("exp", claim.getExp());
+        JwtClaim jwtClaim = jwtUtil.createJwtClaim(
+            user.getId().toString(),
+            user.getEmail(),
+            user.getFullName(),
+            user.getRole().name()
+        );
 
-        String accessToken = jwtUtil.generateToken(claims, user.getEmail(), jwtExpiration);
+        String accessToken = jwtUtil.generateTokenWithClaims(jwtClaim);
 
-        String refreshToken = generateSecureToken(64);
+        String refreshToken = generateSecureRefreshToken();
         user.setRefreshToken(refreshToken);
         user.setRefreshTokenExpiry(LocalDateTime.now().plusDays(30));
         userRepository.save(user);
@@ -74,16 +67,16 @@ public class AuthService implements IAuthService {
         DtoAuthResponse response = new DtoAuthResponse();
         response.setAccessToken(accessToken);
         response.setRefreshToken(refreshToken);
-        response.setExpireAt(claim.getExp());
+        response.setExpireAt(jwtClaim.getExp());
         return response;
 
     }
 
-    private String generateSecureToken(int length) {
+    private String generateSecureRefreshToken() {
         SecureRandom secureRandom = new SecureRandom();
-        StringBuilder token = new StringBuilder(length);
-        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        for (int i = 0; i < length; i++) {
+        StringBuilder token = new StringBuilder(64);
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+        for (int i = 0; i < 64; i++) {
             token.append(chars.charAt(secureRandom.nextInt(chars.length())));
         }
         return token.toString();
