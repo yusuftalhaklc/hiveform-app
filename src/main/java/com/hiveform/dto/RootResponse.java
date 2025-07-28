@@ -3,7 +3,7 @@ package com.hiveform.dto;
 import java.util.Arrays;
 import java.util.List;
 
-public class ResponseUtil {
+public class RootResponse {
 
     public static <T> ApiResponse<T> success(T data, String message, String path) {
         ApiResponse<T> response = new ApiResponse<>();
@@ -11,7 +11,7 @@ public class ResponseUtil {
         response.setMessage(message);
         response.setData(data);
         response.setErrors(null);
-        response.setErrorCode(0); // No error
+        response.setErrorCode(0);
         response.setTimestamp(System.currentTimeMillis());
         response.setPath(path);
         return response;

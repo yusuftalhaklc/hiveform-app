@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.hiveform.dto.ApiResponse;
-import com.hiveform.dto.ResponseUtil;
+import com.hiveform.dto.RootResponse;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
@@ -24,19 +24,19 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ApiResponse<Object> handleGeneralException(Exception ex, HttpServletRequest request) {
-        return ResponseUtil.error(Arrays.asList(ex.getMessage()), "An unexpected error occurred", HttpStatus.INTERNAL_SERVER_ERROR.value(), request.getRequestURI());
+        return RootResponse.error(Arrays.asList(ex.getMessage()), "An unexpected error occurred", HttpStatus.INTERNAL_SERVER_ERROR.value(), request.getRequestURI());
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ApiResponse<Object> handleResourceNotFoundException(ResourceNotFoundException ex, HttpServletRequest request) {
-        return ResponseUtil.error(Arrays.asList(ex.getMessage()), "Resource not found",    HttpStatus.NOT_FOUND.value() , request.getRequestURI());
+        return RootResponse.error(Arrays.asList(ex.getMessage()), "Resource not found",    HttpStatus.NOT_FOUND.value() , request.getRequestURI());
     }
 
     @ExceptionHandler(UnauthorizedException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ApiResponse<Object> handleUnauthorizedException(UnauthorizedException ex, HttpServletRequest request) {
-        return ResponseUtil.error(Arrays.asList(ex.getMessage()), "Unauthorized", HttpStatus.UNAUTHORIZED.value(), request.getRequestURI());
+        return RootResponse.error(Arrays.asList(ex.getMessage()), "Unauthorized", HttpStatus.UNAUTHORIZED.value(), request.getRequestURI());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -48,7 +48,7 @@ public class GlobalExceptionHandler {
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.toList());
         
-        return ResponseUtil.error(errors, "Validation failed", HttpStatus.BAD_REQUEST.value(), request.getRequestURI());
+        return RootResponse.error(errors, "Validation failed", HttpStatus.BAD_REQUEST.value(), request.getRequestURI());
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
@@ -59,6 +59,6 @@ public class GlobalExceptionHandler {
                 .map(ConstraintViolation::getMessage)
                 .collect(Collectors.toList());
         
-        return ResponseUtil.error(errors, "Validation failed", HttpStatus.BAD_REQUEST.value(), request.getRequestURI());
+        return RootResponse.error(errors, "Validation failed", HttpStatus.BAD_REQUEST.value(), request.getRequestURI());
     }
 }
