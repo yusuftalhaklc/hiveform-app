@@ -5,6 +5,7 @@ import com.hiveform.dto.form.DtoFormDelete;
 import com.hiveform.dto.form.DtoFormDetail;
 import com.hiveform.dto.form.DtoFormIU;
 import com.hiveform.dto.form.DtoFormIUResponse;
+import com.hiveform.dto.form.DtoFormUpdate;
 import com.hiveform.dto.question.DtoQuestionDetail;
 import com.hiveform.dto.user.DtoUserInfo;
 import com.hiveform.entities.Form;
@@ -23,6 +24,7 @@ import java.util.UUID;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class FormService implements IFormService {
@@ -37,6 +39,7 @@ public class FormService implements IFormService {
     private QuestionRepository questionRepository;
 
     @Override
+    @Transactional
     public DtoFormIUResponse createForm(DtoFormIU createFormRequestDto) {
         Optional<User> optionalUser = userRepository.findById(UUID.fromString(createFormRequestDto.getUserId()));
         if (optionalUser.isEmpty()) {
@@ -79,23 +82,20 @@ public class FormService implements IFormService {
     }
     
     @Override
-    public DtoFormIUResponse updateForm(DtoFormIU updateFormRequestDto) {
-        Optional<User> optionalUser = userRepository.findById(UUID.fromString(updateFormRequestDto.getUserId()));
+    public DtoFormIUResponse updateForm(DtoFormUpdate updateFormRequestDto, String userId) {
+        Optional<User> optionalUser = userRepository.findById(UUID.fromString(userId));
         if (optionalUser.isEmpty()) {
-            throw new UnauthorizedException("User not found with ID: " + updateFormRequestDto.getUserId());    
+            throw new UnauthorizedException("User not found with ID: " + userId);
         }
         Optional<Form> optionalForm = formRepository.findById(UUID.fromString(updateFormRequestDto.getFormId()));
         if (optionalForm.isEmpty()) {
             throw new ResourceNotFoundException("Form not found with ID: " + updateFormRequestDto.getFormId());
         }
-
         User user = optionalUser.get();
         Form form = optionalForm.get();
-
         if (!form.getUser().getId().equals(user.getId())) {
             throw new UnauthorizedException("User does not have permission to update this form");
         }
-
         form.setTitle(updateFormRequestDto.getTitle());
         form.setDescription(updateFormRequestDto.getDescription());
         form.setBannerImageUrl(updateFormRequestDto.getBannerImageUrl());
@@ -104,7 +104,6 @@ public class FormService implements IFormService {
         form.setExpiresAt(updateFormRequestDto.getExpiresAt());
 
         Form updatedForm = formRepository.save(form);
-
         DtoFormIUResponse response = new DtoFormIUResponse();
         response.setId(updatedForm.getId().toString());
         response.setShortLink(updatedForm.getShortLink());

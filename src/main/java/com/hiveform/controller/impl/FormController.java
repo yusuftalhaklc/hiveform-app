@@ -10,6 +10,7 @@ import com.hiveform.dto.RootResponse;
 import com.hiveform.dto.form.DtoFormDelete;
 import com.hiveform.dto.form.DtoFormDetail;
 import com.hiveform.dto.form.DtoFormIU;
+import com.hiveform.dto.form.DtoFormUpdate;
 import com.hiveform.services.IFormService;
 
 import org.springframework.web.bind.annotation.RequestBody;
@@ -23,7 +24,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-
+import org.springframework.web.bind.annotation.PutMapping;
 
 
 @RestController
@@ -54,6 +55,15 @@ public class FormController implements IFormController {
         deleteRequest.setUserId(userId);
         formService.deleteFormById(deleteRequest);
         return ResponseEntity.ok(RootResponse.success(null, "Form deleted successfully",request.getRequestURI()));
+    }
+
+    @PutMapping("/{formId}")
+    @Override
+    public ResponseEntity<ApiResponse<DtoFormIUResponse>> updateForm(@Valid @RequestBody DtoFormUpdate updateFormRequestDto, @PathVariable String formId, HttpServletRequest request) {
+        String userId = (String) request.getAttribute("userId");
+
+        DtoFormIUResponse response = formService.updateForm(updateFormRequestDto, userId);
+        return ResponseEntity.ok(RootResponse.success(response, "Form updated successfully", request.getRequestURI()));
     }
 
 }

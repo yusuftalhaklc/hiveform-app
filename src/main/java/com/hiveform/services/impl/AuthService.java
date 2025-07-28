@@ -6,7 +6,6 @@ import com.hiveform.dto.auth.DtoLoginIU;
 import com.hiveform.dto.auth.DtoAuthResponse;
 import com.hiveform.security.JwtUtil;
 import com.hiveform.security.JwtClaim;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.beans.factory.annotation.Value;
 import java.util.HashMap;
 import com.hiveform.entities.User;
