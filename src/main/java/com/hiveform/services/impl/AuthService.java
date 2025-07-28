@@ -15,6 +15,8 @@ import com.hiveform.services.IEmailService;
 import com.hiveform.infrastructure.redis.PasswordResetRedisRepository;
 import com.hiveform.utils.SecureTokenGenerator;
 
+import java.util.Optional;
+
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -48,11 +50,13 @@ public class AuthService implements IAuthService {
 
     @Override
     public DtoAuthResponse login(DtoLoginIU loginRequestDto) {
-        User user = userRepository.findByEmail(loginRequestDto.getEmail());
+        Optional<User> optionalUser = userRepository.findByEmail(loginRequestDto.getEmail());
 
-        if (user == null || !passwordEncoder.matches(loginRequestDto.getPassword(), user.getPassword())) {
+        if (optionalUser.isEmpty() || !passwordEncoder.matches(loginRequestDto.getPassword(), optionalUser.get().getPassword())) {
             throw new UnauthorizedException("Email or password is incorrect.");
         }
+
+        User user = optionalUser.get();
 
         if (!user.getIsActive()) {
             throw new ForbiddenException("User account is not active.");
@@ -115,10 +119,13 @@ public class AuthService implements IAuthService {
 
     @Override
     public void verifyEmail(DtoVerifyEmailIU dto) {
-        User user = userRepository.findByEmail(dto.getEmail());
-        if (user == null) {
+        Optional<User> optionalUser = userRepository.findByEmail(dto.getEmail());
+        if (optionalUser.isEmpty()) {
             throw new ResourceNotFoundException("User not found.");
         }
+
+        User user = optionalUser.get();
+
         if (user.getEmailVerificationCode() == null || !user.getEmailVerificationCode().equals(dto.getCode())) {
             throw new UnauthorizedException("Invalid verification code.");
         }
@@ -130,11 +137,13 @@ public class AuthService implements IAuthService {
 
     @Override
     public void forgotPassword(DtoForgotPasswordIU forgotPasswordRequestDto) {
-        User user = userRepository.findByEmail(forgotPasswordRequestDto.getEmail());
+        Optional<User> optionalUser = userRepository.findByEmail(forgotPasswordRequestDto.getEmail());
         
-        if (user == null) {
+        if (optionalUser.isEmpty()) {
             throw new ResourceNotFoundException("User not found.");
         }
+
+        User user = optionalUser.get();
 
         if (!user.getIsActive()) {
             throw new ForbiddenException("User account is not active.");
@@ -162,10 +171,12 @@ public class AuthService implements IAuthService {
             throw new UnauthorizedException("Invalid reset token.");
         }
 
-        User user = userRepository.findByEmail(email);
-        if (user == null) {
+        Optional<User> optionalUser = userRepository.findByEmail(email);
+        if (optionalUser.isEmpty()) {
             throw new ResourceNotFoundException("User not found.");
         }
+
+        User user = optionalUser.get();
 
         if (!user.getIsActive()) {
             throw new ForbiddenException("User account is not active.");

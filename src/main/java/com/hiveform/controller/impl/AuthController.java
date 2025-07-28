@@ -5,11 +5,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.hiveform.services.IAuthService;
+import com.hiveform.services.IGoogleOAuthService;
 
 import jakarta.validation.Valid;
 
 import com.hiveform.dto.auth.DtoForgotPasswordIU;
-import com.hiveform.dto.auth.DtoGoogleAuthIU;
+import com.hiveform.dto.auth.DtoGoogleAuthUrlResponse;
 import com.hiveform.dto.auth.DtoLoginIU;
 import com.hiveform.dto.auth.DtoRegisterIU;
 import com.hiveform.dto.auth.DtoResetPasswordIU;
@@ -19,6 +20,8 @@ import com.hiveform.dto.ApiResponse;
 import com.hiveform.dto.RootResponse;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -26,6 +29,9 @@ public class AuthController {
 
     @Autowired
     private IAuthService authService;
+
+    @Autowired
+    private IGoogleOAuthService googleOAuthService;
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<DtoAuthResponse>> login(@Valid @RequestBody DtoLoginIU loginRequestDto, HttpServletRequest request) {
@@ -45,16 +51,20 @@ public class AuthController {
         return ResponseEntity.ok(RootResponse.success(null, "Email verification successful", request.getRequestURI()));
     }
 
-    @PostMapping("/google")
-    public ResponseEntity<ApiResponse<Void>> google(@Valid @RequestBody DtoGoogleAuthIU googleAuthRequestDto, HttpServletRequest request) {
-        // TODO: implement google auth logic
-        return ResponseEntity.ok(RootResponse.success(null, "Google auth not implemented", request.getRequestURI()));
+    @GetMapping("/google")
+    public void googleAuthorize(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        DtoGoogleAuthUrlResponse authorizationUrl = googleOAuthService.generateAuthorizationUrl();
+        response.sendRedirect(authorizationUrl.getAuthorizationUrl());
     }
 
-    @GetMapping("/google/callback")
-    public ResponseEntity<ApiResponse<Void>> callback(@RequestParam(required = true) String code, @RequestParam(required = true) String state, HttpServletRequest request) {
-        // TODO: implement callback logic
-        return ResponseEntity.ok(RootResponse.success(null, "Google callback not implemented", request.getRequestURI()));
+    @GetMapping("/google/authorize")
+    public ResponseEntity<ApiResponse<DtoAuthResponse>> googleCallback(
+            @RequestParam String code,
+            @RequestParam String state,
+            HttpServletRequest request) {
+        
+        DtoAuthResponse authResponse = googleOAuthService.handleOAuthCallback(code, state);
+        return ResponseEntity.ok(RootResponse.success(authResponse, "Google authentication successful", request.getRequestURI()));
     }
 
     @PostMapping("/forgot-password")

@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 @Repository
 public class PasswordResetRedisRepository {
     private static final String PREFIX = "password_reset:";
+    private static final String TOKEN_PREFIX = "token:";
     private static final long TTL_MINUTES = 3;
     private final RedisTemplate<String, String> redisTemplate;
 
@@ -16,10 +17,8 @@ public class PasswordResetRedisRepository {
     }
 
     public void saveResetToken(String email, String resetToken) {
-        // Store token with email as key
         redisTemplate.opsForValue().set(PREFIX + email, resetToken, TTL_MINUTES, TimeUnit.MINUTES);
-        // Also store email with token as key for reverse lookup
-        redisTemplate.opsForValue().set(PREFIX + "token:" + resetToken, email, TTL_MINUTES, TimeUnit.MINUTES);
+        redisTemplate.opsForValue().set(PREFIX + TOKEN_PREFIX + resetToken, email, TTL_MINUTES, TimeUnit.MINUTES);
     }
 
     public String getResetToken(String email) {
@@ -27,13 +26,13 @@ public class PasswordResetRedisRepository {
     }
 
     public String getEmailByToken(String token) {
-        return redisTemplate.opsForValue().get(PREFIX + "token:" + token);
+        return redisTemplate.opsForValue().get(PREFIX + TOKEN_PREFIX + token);
     }
 
     public void deleteResetToken(String email) {
         String token = getResetToken(email);
         if (token != null) {
-            redisTemplate.delete(PREFIX + "token:" + token);
+            redisTemplate.delete(PREFIX + TOKEN_PREFIX + token);
         }
         redisTemplate.delete(PREFIX + email);
     }
@@ -43,6 +42,6 @@ public class PasswordResetRedisRepository {
     }
 
     public boolean isValidToken(String token) {
-        return redisTemplate.hasKey(PREFIX + "token:" + token);
+        return redisTemplate.hasKey(PREFIX + TOKEN_PREFIX + token);
     }
 } 
