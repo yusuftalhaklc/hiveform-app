@@ -51,6 +51,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/form/**").permitAll() // Form görüntüleme için public
                 .anyRequest().authenticated()
             )
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(exception -> exception
                 .authenticationEntryPoint(jwtAuthenticationEntryPoint)
