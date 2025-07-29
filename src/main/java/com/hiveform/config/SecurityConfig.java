@@ -49,6 +49,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/form/**").permitAll()
+                .requestMatchers("/api/submission").permitAll() // Allow POST submissions without auth
                 .requestMatchers("/api/question/**").authenticated()
                 .requestMatchers("/swagger-ui/**").permitAll()
                 .requestMatchers("/swagger-ui.html").permitAll()

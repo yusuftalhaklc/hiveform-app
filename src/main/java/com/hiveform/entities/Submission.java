@@ -38,5 +38,8 @@ public class Submission {
 
     @OneToMany(mappedBy = "submission", cascade = CascadeType.ALL)
     private List<Answer> answers;
+
+    @Column(name = "submission_by", nullable = true)
+    private UUID submissionBy;
 }
 

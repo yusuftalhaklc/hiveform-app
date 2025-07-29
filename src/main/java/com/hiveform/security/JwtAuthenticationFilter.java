@@ -33,7 +33,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             final String authHeader = request.getHeader("Authorization");
             
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                if (isPublicEndpoint(request.getRequestURI())) {
+                if (isPublicEndpoint(request.getRequestURI()) || isOptionalAuthEndpoint(request, request.getRequestURI())) {
                     filterChain.doFilter(request, response);
                     return;
                 }
@@ -53,11 +53,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } else {
+                if (isOptionalAuthEndpoint(request, request.getRequestURI())) {
+                    // For optional auth endpoints, continue without authentication if token is invalid
+                    filterChain.doFilter(request, response);
+                    return;
+                }
                 throw new AuthenticationRequiredException("Invalid authentication token");
             }
         } catch (AuthenticationRequiredException e) {
+            if (isOptionalAuthEndpoint(request, request.getRequestURI())) {
+                // For optional auth endpoints, continue without authentication
+                filterChain.doFilter(request, response);
+                return;
+            }
             throw e;
         } catch (Exception e) {
+            if (isOptionalAuthEndpoint(request, request.getRequestURI())) {
+                // For optional auth endpoints, continue without authentication
+                filterChain.doFilter(request, response);
+                return;
+            }
             throw new AuthenticationRequiredException("Authentication required");
         }
         
@@ -79,5 +94,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private boolean isPublicEndpoint(String requestURI) {
         return requestURI.startsWith("/api/auth/") || 
                requestURI.startsWith("/api/form/");
+    }
+    
+    private boolean isOptionalAuthEndpoint(HttpServletRequest request, String requestURI) {
+        return requestURI.equals("/api/submission") && "POST".equals(request.getMethod());
     }
 }

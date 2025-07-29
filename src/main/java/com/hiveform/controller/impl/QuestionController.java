@@ -8,6 +8,7 @@ import com.hiveform.services.IQuestionService;
 import com.hiveform.dto.question.QuestionUpdateRequest;
 import com.hiveform.dto.question.QuestionDeleteRequest;
 import com.hiveform.dto.question.QuestionDetailResponse;
+import com.hiveform.controller.IQuestionController;
 import com.hiveform.dto.ApiResponse;
 import com.hiveform.dto.RootResponse;
 import com.hiveform.security.JwtClaim;
@@ -18,7 +19,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RestController
 @RequestMapping("/api/question")
 @Tag(name = "Question", description = "Question API")
-public class QuestionController {
+public class QuestionController implements IQuestionController {
 
     @Autowired
     private IQuestionService questionService;
