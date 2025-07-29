@@ -8,6 +8,8 @@ import com.hiveform.dto.ApiResponse;
 import com.hiveform.dto.submission.SubmissionRequest;
 import com.hiveform.dto.submission.SubmissionResponse;
 import com.hiveform.dto.submission.SubmissionListResponse;
+import com.hiveform.dto.submission.FormSummaryResponse;
+import com.hiveform.dto.submission.QuestionDetailResponse;
 import com.hiveform.security.JwtClaim;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -40,4 +42,22 @@ public interface ISubmissionController {
             @PathVariable String submissionId,
             @AuthenticationPrincipal JwtClaim jwtClaim,
             HttpServletRequest request);
+    
+    // New endpoints for form owner views
+    @GetMapping("/form/{formId}/summary")
+    ResponseEntity<ApiResponse<FormSummaryResponse>> getFormSummary(
+            @PathVariable String formId,
+            @AuthenticationPrincipal JwtClaim jwtClaim,
+            HttpServletRequest request,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size);
+    
+    @GetMapping("/form/{formId}/question/{questionId}")
+    ResponseEntity<ApiResponse<QuestionDetailResponse>> getQuestionDetail(
+            @PathVariable String formId,
+            @PathVariable String questionId,
+            @AuthenticationPrincipal JwtClaim jwtClaim,
+            HttpServletRequest request,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size);
 }

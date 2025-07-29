@@ -40,6 +40,6 @@ public class Submission {
     private List<Answer> answers;
 
     @Column(name = "submission_by", nullable = true)
-    private UUID submissionBy;
+    private String submissionBy;
 }
 

@@ -15,6 +15,11 @@ import com.hiveform.services.ISubmissionService;
 import com.hiveform.security.JwtClaim;
 import com.hiveform.dto.submission.GetSubmissionsRequest;
 import com.hiveform.dto.submission.DeleteSubmissionRequest;
+import com.hiveform.dto.submission.GetSubmissionByIdRequest;
+import com.hiveform.dto.submission.FormSummaryResponse;
+import com.hiveform.dto.submission.GetFormSummaryRequest;
+import com.hiveform.dto.submission.QuestionDetailResponse;
+import com.hiveform.dto.submission.GetQuestionDetailRequest;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -50,8 +55,12 @@ public class SubmissionController implements ISubmissionController {
             @PathVariable String submissionId,
             @AuthenticationPrincipal JwtClaim jwtClaim,
             HttpServletRequest request) {
+        GetSubmissionByIdRequest getSubmissionRequest = GetSubmissionByIdRequest.builder()
+                .submissionId(submissionId)
+                .userId(jwtClaim.getUserId())
+                .build();
         
-        SubmissionResponse response = submissionService.getSubmissionById(submissionId);
+        SubmissionResponse response = submissionService.getSubmissionById(getSubmissionRequest);
         return ResponseEntity.ok(RootResponse.success(response, "Submission retrieved successfully", request.getRequestURI()));
     }
 
@@ -89,5 +98,48 @@ public class SubmissionController implements ISubmissionController {
         
         submissionService.deleteSubmission(deleteRequest);
         return ResponseEntity.ok(RootResponse.success(null, "Submission deleted successfully", request.getRequestURI()));
+    }
+    
+    // New endpoints for form owner views
+    @GetMapping("/form/{formId}/summary")
+    @Override
+    public ResponseEntity<ApiResponse<FormSummaryResponse>> getFormSummary(
+            @PathVariable String formId,
+            @AuthenticationPrincipal JwtClaim jwtClaim,
+            HttpServletRequest request,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        
+        GetFormSummaryRequest getFormSummaryRequest = GetFormSummaryRequest.builder()
+                .formId(formId)
+                .userId(jwtClaim.getUserId())
+                .page(page)
+                .size(size)
+                .build();
+        
+        FormSummaryResponse response = submissionService.getFormSummary(getFormSummaryRequest);
+        return ResponseEntity.ok(RootResponse.success(response, "Form summary retrieved successfully", request.getRequestURI()));
+    }
+    
+    @GetMapping("/form/{formId}/question/{questionId}")
+    @Override
+    public ResponseEntity<ApiResponse<QuestionDetailResponse>> getQuestionDetail(
+            @PathVariable String formId,
+            @PathVariable String questionId,
+            @AuthenticationPrincipal JwtClaim jwtClaim,
+            HttpServletRequest request,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        
+        GetQuestionDetailRequest getQuestionDetailRequest = GetQuestionDetailRequest.builder()
+                .formId(formId)
+                .questionId(questionId)
+                .userId(jwtClaim.getUserId())
+                .page(page)
+                .size(size)
+                .build();
+        
+        QuestionDetailResponse response = submissionService.getQuestionDetail(getQuestionDetailRequest);
+        return ResponseEntity.ok(RootResponse.success(response, "Question detail retrieved successfully", request.getRequestURI()));
     }
 }
