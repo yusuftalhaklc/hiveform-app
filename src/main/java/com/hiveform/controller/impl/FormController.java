@@ -11,6 +11,8 @@ import com.hiveform.dto.form.DtoFormDelete;
 import com.hiveform.dto.form.DtoFormDetail;
 import com.hiveform.dto.form.DtoFormIU;
 import com.hiveform.dto.form.DtoFormUpdate;
+import com.hiveform.dto.form.DtoFormListResponse;
+import com.hiveform.dto.form.DtoGetUserFormsRequest;
 import com.hiveform.services.IFormService;
 import com.hiveform.security.JwtClaim;
 
@@ -27,6 +29,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api/form")
@@ -64,6 +67,16 @@ public class FormController implements IFormController {
         deleteRequest.setUserId(jwtClaim.getUserId());
         formService.deleteFormById(deleteRequest);
         return ResponseEntity.ok(RootResponse.success(null, "Form deleted successfully",request.getRequestURI()));
+    }
+
+    @GetMapping("/user/forms")
+    @Override
+    public ResponseEntity<ApiResponse<DtoFormListResponse>> getUserForms(@AuthenticationPrincipal JwtClaim jwtClaim, HttpServletRequest request, 
+                                                                        @RequestParam(defaultValue = "1") int page, 
+                                                                        @RequestParam(defaultValue = "10") int size) {
+        DtoGetUserFormsRequest requestDto = new DtoGetUserFormsRequest(page, size);
+        DtoFormListResponse response = formService.getUserForms(jwtClaim.getUserId(), requestDto);
+        return ResponseEntity.ok(RootResponse.success(response, "User forms retrieved successfully", request.getRequestURI()));
     }
 
 }

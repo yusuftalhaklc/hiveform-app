@@ -3,10 +3,14 @@ package com.hiveform.dto.form;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class DtoFormUpdate {
     @NotNull(message = "Title cannot be null")
     @NotBlank(message = "Title is required")

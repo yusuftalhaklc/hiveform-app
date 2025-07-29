@@ -6,8 +6,12 @@ import com.hiveform.dto.question.DtoQuestionDetail;
 import com.hiveform.dto.user.DtoUserInfo;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;    
+import lombok.AllArgsConstructor;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class DtoFormDetail {
     private String id;
     private String shortLink;

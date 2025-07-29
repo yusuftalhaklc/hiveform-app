@@ -6,6 +6,9 @@ import com.hiveform.dto.form.DtoFormDetail;
 import com.hiveform.dto.form.DtoFormIU;
 import com.hiveform.dto.form.DtoFormIUResponse;
 import com.hiveform.dto.form.DtoFormUpdate;
+import com.hiveform.dto.form.DtoFormList;
+import com.hiveform.dto.form.DtoFormListResponse;
+import com.hiveform.dto.form.DtoGetUserFormsRequest;
 import com.hiveform.dto.question.DtoQuestionDetail;
 import com.hiveform.dto.user.DtoUserInfo;
 import com.hiveform.entities.Form;
@@ -17,6 +20,8 @@ import com.hiveform.handler.UnauthorizedException;
 import com.hiveform.entities.Question;
 import com.hiveform.repository.UserRepository;
 import com.hiveform.repository.QuestionRepository;
+import com.hiveform.repository.SubmissionRepository;
+import com.hiveform.infrastructure.redis.FormRedisRepository;
 import com.hiveform.utils.SecureTokenGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -25,7 +30,11 @@ import java.util.UUID;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.scheduling.annotation.Async;
 
 @Service
 public class FormService implements IFormService {
@@ -38,6 +47,12 @@ public class FormService implements IFormService {
 
     @Autowired
     private QuestionRepository questionRepository;
+
+    @Autowired
+    private SubmissionRepository submissionRepository;
+
+    @Autowired
+    private FormRedisRepository formRedisRepository;
 
     @Autowired
     private SecureTokenGenerator tokenGenerator;
@@ -157,6 +172,7 @@ public class FormService implements IFormService {
     }
 
     @Override
+    @Transactional
     public void deleteFormById(DtoFormDelete deleteRequest) {
         Optional<User> optionalUser = userRepository.findById(UUID.fromString(deleteRequest.getUserId()));
         if (optionalUser.isEmpty()) {
@@ -174,7 +190,75 @@ public class FormService implements IFormService {
             throw new UnauthorizedException("User does not have permission to delete this form");
         }
 
+        String shortLink = form.getShortLink();
+        
         formRepository.delete(form);
+        
+        clearFormCacheAsync(shortLink);
+    }
+
+    @Async
+    public void clearFormCacheAsync(String shortLink) {
+        try {
+            formRedisRepository.deleteFormByShortlink(shortLink);
+        } catch (Exception e) {
+            System.err.println("Failed to clear form cache for shortLink: " + shortLink + ", Error: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public DtoFormListResponse getUserForms(String userId, DtoGetUserFormsRequest request) {
+        int page = request.getPage();
+        int size = request.getSize();
+        
+        if (size > 20) {
+            size = 20;
+        }
+        if (size < 1) {
+            size = 10; 
+        }
+        if (page <= 0) {
+            page = 1;
+        }
+
+        Optional<User> optionalUser = userRepository.findById(UUID.fromString(userId));
+        if (optionalUser.isEmpty()) {
+            throw new UnauthorizedException("User not found with ID: " + userId);
+        }
+
+        // Convert to 0-based page for Spring Data JPA
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<Form> formPage = formRepository.findByUserIdOrderByCreatedAtDesc(UUID.fromString(userId), pageable);
+
+        List<DtoFormList> formList = new ArrayList<>();
+        for (Form form : formPage.getContent()) {
+            DtoFormList dtoForm = new DtoFormList();
+            dtoForm.setId(form.getId().toString());
+            dtoForm.setShortLink(form.getShortLink());
+            dtoForm.setTitle(form.getTitle());
+            dtoForm.setExpiresAt(form.getExpiresAt());
+            dtoForm.setCreatedAt(form.getCreatedAt());
+            dtoForm.setUpdatedAt(form.getUpdatedAt());
+            dtoForm.setIsActive(form.getIsActive());
+            dtoForm.setIsPublic(form.getIsPublic());
+            
+            // Get submission count from SubmissionRepository
+            Long submissionCount = submissionRepository.countByFormId(form.getId());
+            dtoForm.setSubmissionCount(submissionCount);
+            
+            formList.add(dtoForm);
+        }
+
+        DtoFormListResponse response = new DtoFormListResponse();
+        response.setForms(formList);
+        response.setCurrentPage(page);
+        response.setPageSize(size);
+        response.setTotalElements(formPage.getTotalElements());
+        response.setTotalPages(formPage.getTotalPages());
+        response.setHasNext(formPage.hasNext());
+        response.setHasPrevious(formPage.hasPrevious());
+
+        return response;
     }
 
 

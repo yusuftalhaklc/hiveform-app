@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class DtoFormIUResponse {
-    private String id;
-    private String shortLink;
-}
+public class DtoGetUserFormsRequest {
+    private int page = 1;
+    private int size = 10;
+} 

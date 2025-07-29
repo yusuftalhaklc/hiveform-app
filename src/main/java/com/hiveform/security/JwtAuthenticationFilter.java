@@ -77,6 +77,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     
     private boolean isPublicEndpoint(String requestURI) {
         return requestURI.startsWith("/api/auth/") || 
-               requestURI.startsWith("/api/form/") && requestURI.matches(".*/\\w+$");
+               requestURI.startsWith("/api/form/");
     }
 }

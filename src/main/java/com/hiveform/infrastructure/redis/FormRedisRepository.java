@@ -25,4 +25,5 @@ public class FormRedisRepository {
     public void deleteFormByShortlink(String shortlink) {
         redisTemplate.delete(PREFIX + shortlink);
     }
+
 }
