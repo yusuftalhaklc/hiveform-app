@@ -1,22 +1,22 @@
 package com.hiveform.services.impl;
 
 import com.hiveform.config.GoogleOAuthConfig;
-import com.hiveform.dto.auth.DtoGoogleAuth;
-import com.hiveform.dto.auth.DtoGoogleTokenResponse;
-import com.hiveform.dto.auth.DtoGoogleUserInfo;
-import com.hiveform.dto.auth.DtoAuthResponse;
-import com.hiveform.dto.auth.DtoGoogleAuthUrlResponse;
+import com.hiveform.dto.auth.GoogleAuthRequest;
+import com.hiveform.dto.auth.GoogleTokenResponse;
+import com.hiveform.dto.auth.GoogleUserInfo;
+import com.hiveform.dto.auth.AuthResponse;
+import com.hiveform.dto.auth.GoogleAuthUrlResponse;
 import com.hiveform.entities.User;
 import com.hiveform.enums.AuthProvider;
 import com.hiveform.enums.UserRole;
+import com.hiveform.exception.ForbiddenException;
+import com.hiveform.exception.UnauthorizedException;
 import com.hiveform.repository.UserRepository;
 import com.hiveform.security.JwtUtil;
 import com.hiveform.security.JwtClaim;
 import com.hiveform.services.IGoogleOAuthService;
 import com.hiveform.utils.SecureTokenGenerator;
 import com.hiveform.infrastructure.redis.OAuthStateRedisRepository;
-import com.hiveform.handler.UnauthorizedException;
-import com.hiveform.handler.ForbiddenException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
@@ -51,41 +51,43 @@ public class GoogleOAuthService implements IGoogleOAuthService {
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Override
-    public DtoGoogleAuthUrlResponse generateAuthorizationUrl() {
+    public GoogleAuthUrlResponse generateAuthorizationUrl() {
         String state = tokenGenerator.generateSecureToken(32);
         
         oAuthStateRedisRepository.saveState(state);
         
         String authorizationUrl = buildAuthorizationUrl(state);
         
-        DtoGoogleAuthUrlResponse response = new DtoGoogleAuthUrlResponse();
-        response.setAuthorizationUrl(authorizationUrl);
-        response.setState(state);
+        GoogleAuthUrlResponse response = GoogleAuthUrlResponse.builder()
+            .authorizationUrl(authorizationUrl)
+            .state(state)
+            .build();
         
         return response;
     }
 
     @Override
-    public DtoAuthResponse handleOAuthCallback(String code, String state) {
+    public AuthResponse handleOAuthCallback(String code, String state) {
         if (!oAuthStateRedisRepository.isValidState(state)) {
             throw new UnauthorizedException("Invalid or expired state parameter");
         }
         
         oAuthStateRedisRepository.deleteState(state);
         
-        DtoGoogleAuth googleAuthRequestDto = new DtoGoogleAuth();
-        googleAuthRequestDto.setCode(code);
-        googleAuthRequestDto.setState(state);
+        GoogleAuthRequest googleAuthRequestDto = GoogleAuthRequest.builder()
+            .code(code)
+            .state(state)
+            .build();
         
         return authenticateWithGoogle(googleAuthRequestDto);
     }
 
     @Override
-    public DtoAuthResponse authenticateWithGoogle(DtoGoogleAuth googleAuthRequestDto) {
+    public AuthResponse authenticateWithGoogle(GoogleAuthRequest googleAuthRequestDto) {
         try {
-            DtoGoogleTokenResponse tokenResponse = exchangeCodeForToken(googleAuthRequestDto.getCode());
+            GoogleTokenResponse tokenResponse = exchangeCodeForToken(googleAuthRequestDto.getCode());
             
-            DtoGoogleUserInfo userInfo = getUserInfoFromGoogle(tokenResponse.getAccessToken());
+            GoogleUserInfo userInfo = getUserInfoFromGoogle(tokenResponse.getAccessToken());
             
             User user = findOrCreateUser(userInfo);
             
@@ -108,7 +110,7 @@ public class GoogleOAuthService implements IGoogleOAuthService {
                 .toString();
     }
 
-    private DtoGoogleTokenResponse exchangeCodeForToken(String code) {
+    private GoogleTokenResponse exchangeCodeForToken(String code) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
@@ -121,10 +123,10 @@ public class GoogleOAuthService implements IGoogleOAuthService {
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
 
-        ResponseEntity<DtoGoogleTokenResponse> response = restTemplate.postForEntity(
+        ResponseEntity<GoogleTokenResponse> response = restTemplate.postForEntity(
             googleOAuthConfig.getTokenUrl(),
             request,
-            DtoGoogleTokenResponse.class
+            GoogleTokenResponse.class
         );
 
         if (response.getStatusCode() != HttpStatus.OK || response.getBody() == null) {
@@ -134,17 +136,17 @@ public class GoogleOAuthService implements IGoogleOAuthService {
         return response.getBody();
     }
 
-    private DtoGoogleUserInfo getUserInfoFromGoogle(String accessToken) {
+    private GoogleUserInfo getUserInfoFromGoogle(String accessToken) {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(accessToken);
 
         HttpEntity<String> request = new HttpEntity<>(headers);
 
-        ResponseEntity<DtoGoogleUserInfo> response = restTemplate.exchange(
+        ResponseEntity<GoogleUserInfo> response = restTemplate.exchange(
             googleOAuthConfig.getUserInfoUrl(),
             HttpMethod.GET,
             request,
-            DtoGoogleUserInfo.class
+            GoogleUserInfo.class
         );
 
         if (response.getStatusCode() != HttpStatus.OK || response.getBody() == null) {
@@ -154,7 +156,7 @@ public class GoogleOAuthService implements IGoogleOAuthService {
         return response.getBody();
     }
 
-    private User findOrCreateUser(DtoGoogleUserInfo userInfo) {
+    private User findOrCreateUser(GoogleUserInfo userInfo) {
         Optional<User> userOptional = userRepository.findByProviderId(userInfo.getId());
         
         User user;
@@ -190,7 +192,7 @@ public class GoogleOAuthService implements IGoogleOAuthService {
         return user;
     }
 
-    private User createNewGoogleUser(DtoGoogleUserInfo userInfo) {
+    private User createNewGoogleUser(GoogleUserInfo userInfo) {
         User user = new User();
         user.setEmail(userInfo.getEmail());
         user.setFullName(userInfo.getName());
@@ -205,7 +207,7 @@ public class GoogleOAuthService implements IGoogleOAuthService {
         return user;
     }
 
-    private void updateUserInfo(User user, DtoGoogleUserInfo userInfo) {
+    private void updateUserInfo(User user, GoogleUserInfo userInfo) {
         if (!userInfo.getName().equals(user.getFullName())) {
             user.setFullName(userInfo.getName());
         }
@@ -215,7 +217,7 @@ public class GoogleOAuthService implements IGoogleOAuthService {
         }
     }
 
-    private DtoAuthResponse generateAuthResponse(User user) {
+    private AuthResponse generateAuthResponse(User user) {
         JwtClaim jwtClaim = jwtUtil.createJwtClaim(
             user.getId().toString(),
             user.getEmail(),
@@ -230,10 +232,11 @@ public class GoogleOAuthService implements IGoogleOAuthService {
         user.setRefreshTokenExpiry(System.currentTimeMillis() / 1000 + (30 * 24 * 60 * 60));
         userRepository.save(user);
 
-        DtoAuthResponse response = new DtoAuthResponse();
-        response.setAccessToken(accessToken);
-        response.setRefreshToken(refreshToken);
-        response.setExpireAt(jwtClaim.getExp());
+        AuthResponse response = AuthResponse.builder()
+            .accessToken(accessToken)
+            .refreshToken(refreshToken)
+            .expireAt(jwtClaim.getExp())
+            .build();
         
         return response;
     }

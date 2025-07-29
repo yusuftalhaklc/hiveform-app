@@ -1,4 +1,4 @@
-package com.hiveform.handler;
+package com.hiveform.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.FieldError;

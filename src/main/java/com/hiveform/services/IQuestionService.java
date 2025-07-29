@@ -1,12 +1,12 @@
 package com.hiveform.services;
 
 import com.hiveform.entities.Question;
-import com.hiveform.dto.question.DtoQuestionUpdate;
-import com.hiveform.dto.question.DtoQuestionDelete;
-import com.hiveform.dto.question.DtoQuestionDetail;
+import com.hiveform.dto.question.QuestionUpdateRequest;
+import com.hiveform.dto.question.QuestionDeleteRequest;
+import com.hiveform.dto.question.QuestionDetailResponse;
 
 public interface IQuestionService {
     Question createQuestion(Question question);
-    DtoQuestionDetail updateQuestion(DtoQuestionUpdate updateQuestionRequestDto, String userId);
-    void deleteQuestion(DtoQuestionDelete deleteRequest, String userId);
+    QuestionDetailResponse updateQuestion(QuestionUpdateRequest updateQuestionRequestDto, String userId);
+    void deleteQuestion(QuestionDeleteRequest deleteRequest, String userId);
 }

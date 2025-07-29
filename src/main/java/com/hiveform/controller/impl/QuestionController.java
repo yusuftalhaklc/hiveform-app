@@ -5,9 +5,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import com.hiveform.services.IQuestionService;
-import com.hiveform.dto.question.DtoQuestionUpdate;
-import com.hiveform.dto.question.DtoQuestionDelete;
-import com.hiveform.dto.question.DtoQuestionDetail;
+import com.hiveform.dto.question.QuestionUpdateRequest;
+import com.hiveform.dto.question.QuestionDeleteRequest;
+import com.hiveform.dto.question.QuestionDetailResponse;
 import com.hiveform.dto.ApiResponse;
 import com.hiveform.dto.RootResponse;
 import com.hiveform.security.JwtClaim;
@@ -24,8 +24,8 @@ public class QuestionController {
     private IQuestionService questionService;
 
     @PutMapping("/{questionId}")
-    public ResponseEntity<ApiResponse<DtoQuestionDetail>> updateQuestion(
-            @Valid @RequestBody DtoQuestionUpdate updateQuestionRequestDto,
+    public ResponseEntity<ApiResponse<QuestionDetailResponse>> updateQuestion(
+            @Valid @RequestBody QuestionUpdateRequest updateQuestionRequestDto,
             @PathVariable String questionId,
             @AuthenticationPrincipal JwtClaim jwtClaim,
             HttpServletRequest request) {
@@ -33,7 +33,7 @@ public class QuestionController {
         updateQuestionRequestDto.setQuestionId(questionId);
         updateQuestionRequestDto.setUserId(jwtClaim.getUserId());
         
-        DtoQuestionDetail response = questionService.updateQuestion(updateQuestionRequestDto, jwtClaim.getUserId());
+        QuestionDetailResponse response = questionService.updateQuestion(updateQuestionRequestDto, jwtClaim.getUserId());
         return ResponseEntity.ok(RootResponse.success(response, "Question updated successfully", request.getRequestURI()));
     }
 
@@ -43,9 +43,10 @@ public class QuestionController {
             @AuthenticationPrincipal JwtClaim jwtClaim,
             HttpServletRequest request) {
         
-        DtoQuestionDelete deleteRequest = new DtoQuestionDelete();
-        deleteRequest.setQuestionId(questionId);
-        deleteRequest.setUserId(jwtClaim.getUserId());
+        QuestionDeleteRequest deleteRequest = QuestionDeleteRequest.builder()
+            .questionId(questionId)
+            .userId(jwtClaim.getUserId())
+            .build();
         
         questionService.deleteQuestion(deleteRequest, jwtClaim.getUserId());
         return ResponseEntity.ok(RootResponse.success(null, "Question deleted successfully", request.getRequestURI()));

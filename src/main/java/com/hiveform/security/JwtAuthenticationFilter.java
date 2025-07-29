@@ -10,7 +10,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import com.hiveform.handler.AuthenticationRequiredException;
+
+import com.hiveform.exception.AuthenticationRequiredException;
 
 import java.io.IOException;
 import java.util.Collections;

@@ -3,14 +3,16 @@ package com.hiveform.dto.form;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.Builder;
 
 import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class DtoFormListResponse {
-    private List<DtoFormList> forms;
+@Builder
+public class FormListPageResponse {
+    private List<FormListResponse> forms;
     private int currentPage;
     private int pageSize;
     private long totalElements;

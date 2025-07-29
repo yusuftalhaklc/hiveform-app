@@ -3,11 +3,13 @@ package com.hiveform.dto.form;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.Builder;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class DtoGetUserFormsRequest {
-    private int page = 1;
-    private int size = 10;
+@Builder
+public class FormResponse {
+    private String id;
+    private String shortLink;
 } 

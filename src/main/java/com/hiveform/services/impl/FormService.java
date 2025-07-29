@@ -1,22 +1,22 @@
 package com.hiveform.services.impl;
 import org.springframework.beans.BeanUtils;
 
-import com.hiveform.dto.form.DtoFormDelete;
-import com.hiveform.dto.form.DtoFormDetail;
-import com.hiveform.dto.form.DtoFormIU;
-import com.hiveform.dto.form.DtoFormIUResponse;
-import com.hiveform.dto.form.DtoFormUpdate;
-import com.hiveform.dto.form.DtoFormList;
-import com.hiveform.dto.form.DtoFormListResponse;
-import com.hiveform.dto.form.DtoGetUserFormsRequest;
-import com.hiveform.dto.question.DtoQuestionDetail;
-import com.hiveform.dto.user.DtoUserInfo;
+import com.hiveform.dto.form.FormDeleteRequest;
+import com.hiveform.dto.form.FormDetailResponse;
+import com.hiveform.dto.form.FormRequest;
+import com.hiveform.dto.form.FormResponse;
+import com.hiveform.dto.form.FormUpdateRequest;
+import com.hiveform.dto.form.FormListResponse;
+import com.hiveform.dto.form.FormListPageResponse;
+import com.hiveform.dto.form.GetUserFormsRequest;
+import com.hiveform.dto.question.QuestionDetailResponse;
+import com.hiveform.dto.user.UserInfoResponse;
 import com.hiveform.entities.Form;
 import com.hiveform.repository.FormRepository;
 import com.hiveform.services.IFormService;
 import com.hiveform.entities.User;
-import com.hiveform.handler.ResourceNotFoundException;
-import com.hiveform.handler.UnauthorizedException;
+import com.hiveform.exception.ResourceNotFoundException;
+import com.hiveform.exception.UnauthorizedException;
 import com.hiveform.entities.Question;
 import com.hiveform.repository.UserRepository;
 import com.hiveform.repository.QuestionRepository;
@@ -59,7 +59,7 @@ public class FormService implements IFormService {
 
     @Override
     @Transactional
-    public DtoFormIUResponse createForm(DtoFormIU createFormRequestDto) {
+    public FormResponse createForm(FormRequest createFormRequestDto) {
         Optional<User> optionalUser = userRepository.findById(UUID.fromString(createFormRequestDto.getUserId()));
         if (optionalUser.isEmpty()) {
             throw new UnauthorizedException("User not found with ID: " + createFormRequestDto.getUserId());    
@@ -94,14 +94,15 @@ public class FormService implements IFormService {
             questionRepository.saveAll(questionEntities);
         }
 
-        DtoFormIUResponse dtoForm = new DtoFormIUResponse();
-        dtoForm.setId(savedForm.getId().toString());
-        dtoForm.setShortLink(savedForm.getShortLink());
+        FormResponse dtoForm = FormResponse.builder()
+            .id(savedForm.getId().toString())
+            .shortLink(savedForm.getShortLink())
+            .build();
         return dtoForm;
     }
     
     @Override
-    public DtoFormIUResponse updateForm(DtoFormUpdate updateFormRequestDto, String userId) {
+    public FormResponse updateForm(FormUpdateRequest updateFormRequestDto, String userId) {
         Optional<User> optionalUser = userRepository.findById(UUID.fromString(userId));
         if (optionalUser.isEmpty()) {
             throw new UnauthorizedException("User not found with ID: " + userId);
@@ -129,14 +130,15 @@ public class FormService implements IFormService {
         }
 
         Form updatedForm = formRepository.save(form);
-        DtoFormIUResponse response = new DtoFormIUResponse();
-        response.setId(updatedForm.getId().toString());
-        response.setShortLink(updatedForm.getShortLink());
+        FormResponse response = FormResponse.builder()
+            .id(updatedForm.getId().toString())
+            .shortLink(updatedForm.getShortLink())
+            .build();
         return response;
     }
 
     @Override
-    public DtoFormDetail getFormByShortLink(String shortLink) {
+    public FormDetailResponse getFormByShortLink(String shortLink) {
         Optional<Form> optionalForm = formRepository.findByShortLink(shortLink);
         if (optionalForm.isEmpty()) {
             throw new ResourceNotFoundException("Form not found with short link: " + shortLink);
@@ -144,27 +146,45 @@ public class FormService implements IFormService {
 
         Form form = optionalForm.get();
 
-        DtoFormDetail dtoFormDetail = new DtoFormDetail();
-        BeanUtils.copyProperties(form, dtoFormDetail);
-
-        dtoFormDetail.setId(form.getId().toString());
-        dtoFormDetail.setQuestions(new ArrayList<>());
+        FormDetailResponse dtoFormDetail = FormDetailResponse.builder()
+            .id(form.getId().toString())
+            .shortLink(form.getShortLink())
+            .title(form.getTitle())
+            .description(form.getDescription())
+            .bannerImageUrl(form.getBannerImageUrl())
+            .isActive(form.getIsActive())
+            .isPublic(form.getIsPublic())
+            .expiresAt(form.getExpiresAt())
+            .createdAt(form.getCreatedAt())
+            .updatedAt(form.getUpdatedAt())
+            .questions(new ArrayList<>())
+            .build();
 
         if (form.getQuestions() != null) {
             for (Question question : form.getQuestions()) {
-                DtoQuestionDetail dtoQuestion = new DtoQuestionDetail();
-                BeanUtils.copyProperties(question, dtoQuestion);
-                dtoQuestion.setId(question.getId().toString());
-                dtoQuestion.setFormId(form.getId().toString());
-                dtoQuestion.setType(question.getType().name());
-                dtoFormDetail.getQuestions().add(dtoQuestion);
+                            QuestionDetailResponse dtoQuestion = QuestionDetailResponse.builder()
+                .id(question.getId().toString())
+                .formId(form.getId().toString())
+                .title(question.getTitle())
+                .description(question.getDescription())
+                .questionIndex(question.getQuestionIndex())
+                .imageUrl(question.getImageUrl())
+                .type(question.getType().name())
+                .isRequired(question.getIsRequired())
+                .options(question.getOptions())
+                .createdAt(question.getCreatedAt())
+                .updatedAt(question.getUpdatedAt())
+                .build();
+            dtoFormDetail.getQuestions().add(dtoQuestion);
             }
         }
 
         if (form.getUser() != null) {
-            dtoFormDetail.setCreatedBy(new DtoUserInfo());
-            BeanUtils.copyProperties(form.getUser(), dtoFormDetail.getCreatedBy());
-            dtoFormDetail.getCreatedBy().setId(form.getUser().getId().toString());
+            UserInfoResponse userInfo = UserInfoResponse.builder()
+                .id(form.getUser().getId().toString())
+                .fullName(form.getUser().getFullName())
+                .build();
+            dtoFormDetail.setCreatedBy(userInfo);
         }
 
 
@@ -173,7 +193,7 @@ public class FormService implements IFormService {
 
     @Override
     @Transactional
-    public void deleteFormById(DtoFormDelete deleteRequest) {
+    public void deleteFormById(FormDeleteRequest deleteRequest) {
         Optional<User> optionalUser = userRepository.findById(UUID.fromString(deleteRequest.getUserId()));
         if (optionalUser.isEmpty()) {
             throw new UnauthorizedException("User not found with ID: " + deleteRequest.getUserId());    
@@ -207,7 +227,7 @@ public class FormService implements IFormService {
     }
 
     @Override
-    public DtoFormListResponse getUserForms(String userId, DtoGetUserFormsRequest request) {
+    public FormListPageResponse getUserForms(String userId, GetUserFormsRequest request) {
         int page = request.getPage();
         int size = request.getSize();
         
@@ -230,33 +250,35 @@ public class FormService implements IFormService {
         Pageable pageable = PageRequest.of(page - 1, size);
         Page<Form> formPage = formRepository.findByUserIdOrderByCreatedAtDesc(UUID.fromString(userId), pageable);
 
-        List<DtoFormList> formList = new ArrayList<>();
+        List<FormListResponse> formList = new ArrayList<>();
         for (Form form : formPage.getContent()) {
-            DtoFormList dtoForm = new DtoFormList();
-            dtoForm.setId(form.getId().toString());
-            dtoForm.setShortLink(form.getShortLink());
-            dtoForm.setTitle(form.getTitle());
-            dtoForm.setExpiresAt(form.getExpiresAt());
-            dtoForm.setCreatedAt(form.getCreatedAt());
-            dtoForm.setUpdatedAt(form.getUpdatedAt());
-            dtoForm.setIsActive(form.getIsActive());
-            dtoForm.setIsPublic(form.getIsPublic());
-            
             // Get submission count from SubmissionRepository
             Long submissionCount = submissionRepository.countByFormId(form.getId());
-            dtoForm.setSubmissionCount(submissionCount);
+            
+            FormListResponse dtoForm = FormListResponse.builder()
+                .id(form.getId().toString())
+                .shortLink(form.getShortLink())
+                .title(form.getTitle())
+                .expiresAt(form.getExpiresAt())
+                .createdAt(form.getCreatedAt())
+                .updatedAt(form.getUpdatedAt())
+                .isActive(form.getIsActive())
+                .isPublic(form.getIsPublic())
+                .submissionCount(submissionCount)
+                .build();
             
             formList.add(dtoForm);
         }
 
-        DtoFormListResponse response = new DtoFormListResponse();
-        response.setForms(formList);
-        response.setCurrentPage(page);
-        response.setPageSize(size);
-        response.setTotalElements(formPage.getTotalElements());
-        response.setTotalPages(formPage.getTotalPages());
-        response.setHasNext(formPage.hasNext());
-        response.setHasPrevious(formPage.hasPrevious());
+        FormListPageResponse response = FormListPageResponse.builder()
+            .forms(formList)
+            .currentPage(page)
+            .pageSize(size)
+            .totalElements(formPage.getTotalElements())
+            .totalPages(formPage.getTotalPages())
+            .hasNext(formPage.hasNext())
+            .hasPrevious(formPage.hasPrevious())
+            .build();
 
         return response;
     }

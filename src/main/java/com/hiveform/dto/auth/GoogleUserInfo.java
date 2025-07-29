@@ -2,9 +2,15 @@ package com.hiveform.dto.auth;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 
 @Data
-public class DtoGoogleUserInfo {
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class GoogleUserInfo {
     private String id;
     private String email;
     

@@ -5,12 +5,12 @@ import com.hiveform.entities.Form;
 import com.hiveform.repository.QuestionRepository;
 import com.hiveform.repository.FormRepository;
 import com.hiveform.services.IQuestionService;
-import com.hiveform.dto.question.DtoQuestionUpdate;
-import com.hiveform.dto.question.DtoQuestionDelete;
-import com.hiveform.dto.question.DtoQuestionDetail;
-import com.hiveform.handler.ResourceNotFoundException;
-import com.hiveform.handler.ForbiddenException;
+import com.hiveform.dto.question.QuestionUpdateRequest;
+import com.hiveform.dto.question.QuestionDeleteRequest;
+import com.hiveform.dto.question.QuestionDetailResponse;
 import com.hiveform.enums.QuestionType;
+import com.hiveform.exception.ForbiddenException;
+import com.hiveform.exception.ResourceNotFoundException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -32,7 +32,7 @@ public class QuestionService implements IQuestionService {
     }
 
     @Override
-    public DtoQuestionDetail updateQuestion(DtoQuestionUpdate updateQuestionRequestDto, String userId) {
+    public QuestionDetailResponse updateQuestion(QuestionUpdateRequest updateQuestionRequestDto, String userId) {
         UUID questionId = UUID.fromString(updateQuestionRequestDto.getQuestionId());
         Optional<Question> optionalQuestion = questionRepository.findById(questionId);
         if (optionalQuestion.isEmpty()) {
@@ -62,24 +62,25 @@ public class QuestionService implements IQuestionService {
         
         Question updatedQuestion = questionRepository.save(question);
         
-        DtoQuestionDetail dtoQuestionDetail = new DtoQuestionDetail();
-        dtoQuestionDetail.setId(updatedQuestion.getId().toString());
-        dtoQuestionDetail.setFormId(updatedQuestion.getForm().getId().toString());
-        dtoQuestionDetail.setTitle(updatedQuestion.getTitle());
-        dtoQuestionDetail.setDescription(updatedQuestion.getDescription());
-        dtoQuestionDetail.setQuestionIndex(updatedQuestion.getQuestionIndex());
-        dtoQuestionDetail.setImageUrl(updatedQuestion.getImageUrl());
-        dtoQuestionDetail.setType(updatedQuestion.getType().name());
-        dtoQuestionDetail.setIsRequired(updatedQuestion.getIsRequired());
-        dtoQuestionDetail.setOptions(updatedQuestion.getOptions());
-        dtoQuestionDetail.setCreatedAt(updatedQuestion.getCreatedAt());
-        dtoQuestionDetail.setUpdatedAt(updatedQuestion.getUpdatedAt());
+        QuestionDetailResponse dtoQuestionDetail = QuestionDetailResponse.builder()
+            .id(updatedQuestion.getId().toString())
+            .formId(updatedQuestion.getForm().getId().toString())
+            .title(updatedQuestion.getTitle())
+            .description(updatedQuestion.getDescription())
+            .questionIndex(updatedQuestion.getQuestionIndex())
+            .imageUrl(updatedQuestion.getImageUrl())
+            .type(updatedQuestion.getType().name())
+            .isRequired(updatedQuestion.getIsRequired())
+            .options(updatedQuestion.getOptions())
+            .createdAt(updatedQuestion.getCreatedAt())
+            .updatedAt(updatedQuestion.getUpdatedAt())
+            .build();
         
         return dtoQuestionDetail;
     }
 
     @Override
-    public void deleteQuestion(DtoQuestionDelete deleteRequest, String userId) {
+    public void deleteQuestion(QuestionDeleteRequest deleteRequest, String userId) {
         UUID questionId = UUID.fromString(deleteRequest.getQuestionId());
         Optional<Question> optionalQuestion = questionRepository.findById(questionId);
         if (optionalQuestion.isEmpty()) {

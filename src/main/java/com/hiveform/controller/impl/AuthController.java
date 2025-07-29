@@ -9,13 +9,13 @@ import com.hiveform.services.IGoogleOAuthService;
 
 import jakarta.validation.Valid;
 
-import com.hiveform.dto.auth.DtoForgotPasswordIU;
-import com.hiveform.dto.auth.DtoGoogleAuthUrlResponse;
-import com.hiveform.dto.auth.DtoLoginIU;
-import com.hiveform.dto.auth.DtoRegisterIU;
-import com.hiveform.dto.auth.DtoResetPasswordIU;
-import com.hiveform.dto.auth.DtoVerifyEmailIU;
-import com.hiveform.dto.auth.DtoAuthResponse;
+import com.hiveform.dto.auth.ForgotPasswordRequest;
+import com.hiveform.dto.auth.GoogleAuthUrlResponse;
+import com.hiveform.dto.auth.LoginRequest;
+import com.hiveform.dto.auth.RegisterRequest;
+import com.hiveform.dto.auth.ResetPasswordRequest;
+import com.hiveform.dto.auth.VerifyEmailRequest;
+import com.hiveform.dto.auth.AuthResponse;
 import com.hiveform.dto.ApiResponse;
 import com.hiveform.dto.RootResponse;
 
@@ -36,43 +36,43 @@ public class AuthController {
     private IGoogleOAuthService googleOAuthService;
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<DtoAuthResponse>> login(@Valid @RequestBody DtoLoginIU loginRequestDto, HttpServletRequest request) {
-        DtoAuthResponse response = authService.login(loginRequestDto);
+    public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest loginRequestDto, HttpServletRequest request) {
+        AuthResponse response = authService.login(loginRequestDto);
         return ResponseEntity.ok(RootResponse.success(response, "Login successful", request.getRequestURI()));
     }
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<String>> register(@Valid @RequestBody DtoRegisterIU registerRequestDto, HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<String>> register(@Valid @RequestBody RegisterRequest registerRequestDto, HttpServletRequest request) {
         authService.register(registerRequestDto);
         return ResponseEntity.ok(RootResponse.success(null, "Registration successful and email verification sent", request.getRequestURI()));
     }
 
     @PostMapping("/verify")
-    public ResponseEntity<ApiResponse<Void>> verifyEmail(@Valid @RequestBody DtoVerifyEmailIU dto, HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<Void>> verifyEmail(@Valid @RequestBody VerifyEmailRequest dto, HttpServletRequest request) {
         authService.verifyEmail(dto);
         return ResponseEntity.ok(RootResponse.success(null, "Email verification successful", request.getRequestURI()));
     }
 
     @GetMapping("/google")
     public void googleAuthorize(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        DtoGoogleAuthUrlResponse authorizationUrl = googleOAuthService.generateAuthorizationUrl();
+        GoogleAuthUrlResponse authorizationUrl = googleOAuthService.generateAuthorizationUrl();
         response.sendRedirect(authorizationUrl.getAuthorizationUrl());
     }
 
     @GetMapping("/google/authorize")
-    public ResponseEntity<ApiResponse<DtoAuthResponse>> googleCallback(@RequestParam String code, @RequestParam String state, HttpServletRequest request) {
-        DtoAuthResponse authResponse = googleOAuthService.handleOAuthCallback(code, state);
+    public ResponseEntity<ApiResponse<AuthResponse>> googleCallback(@RequestParam String code, @RequestParam String state, HttpServletRequest request) {
+        AuthResponse authResponse = googleOAuthService.handleOAuthCallback(code, state);
         return ResponseEntity.ok(RootResponse.success(authResponse, "Google authentication successful", request.getRequestURI()));
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody DtoForgotPasswordIU forgotPasswordRequestDto, HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest forgotPasswordRequestDto, HttpServletRequest request) {
         authService.forgotPassword(forgotPasswordRequestDto);
         return ResponseEntity.ok(RootResponse.success(null, "Password reset email sent if account exists", request.getRequestURI()));
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody DtoResetPasswordIU resetPasswordRequestDto, HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody ResetPasswordRequest resetPasswordRequestDto, HttpServletRequest request) {
         authService.resetPassword(resetPasswordRequestDto);
         return ResponseEntity.ok(RootResponse.success(null, "Password reset successful", request.getRequestURI()));
     }

@@ -1,4 +1,4 @@
-package com.hiveform.handler;
+package com.hiveform.exception;
 
 
 public class UnauthorizedException extends RuntimeException {

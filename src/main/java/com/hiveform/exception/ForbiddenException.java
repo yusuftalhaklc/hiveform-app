@@ -1,4 +1,4 @@
-package com.hiveform.handler;
+package com.hiveform.exception;
 
 public class ForbiddenException extends RuntimeException {
     public ForbiddenException(String message) {

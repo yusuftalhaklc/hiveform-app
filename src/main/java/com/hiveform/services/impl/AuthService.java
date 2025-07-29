@@ -1,14 +1,17 @@
 package com.hiveform.services.impl;
 
-import com.hiveform.dto.auth.DtoRegisterIU;
-import com.hiveform.dto.auth.DtoVerifyEmailIU;
-import com.hiveform.dto.auth.DtoLoginIU;
-import com.hiveform.dto.auth.DtoAuthResponse;
-import com.hiveform.dto.auth.DtoForgotPasswordIU;
-import com.hiveform.dto.auth.DtoResetPasswordIU;
+import com.hiveform.dto.auth.RegisterRequest;
+import com.hiveform.dto.auth.VerifyEmailRequest;
+import com.hiveform.dto.auth.LoginRequest;
+import com.hiveform.dto.auth.AuthResponse;
+import com.hiveform.dto.auth.ForgotPasswordRequest;
+import com.hiveform.dto.auth.ResetPasswordRequest;
 import com.hiveform.security.JwtUtil;
 import com.hiveform.security.JwtClaim;
 import com.hiveform.entities.User;
+import com.hiveform.exception.ForbiddenException;
+import com.hiveform.exception.ResourceNotFoundException;
+import com.hiveform.exception.UnauthorizedException;
 import com.hiveform.repository.UserRepository;
 import com.hiveform.services.IAuthService;
 import com.hiveform.services.IEmailService;
@@ -22,10 +25,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
-
-import com.hiveform.handler.ResourceNotFoundException;
-import com.hiveform.handler.UnauthorizedException;
-import com.hiveform.handler.ForbiddenException;
 
 @Service
 public class AuthService implements IAuthService {
@@ -49,7 +48,7 @@ public class AuthService implements IAuthService {
     private SecureTokenGenerator tokenGenerator;
 
     @Override
-    public DtoAuthResponse login(DtoLoginIU loginRequestDto) {
+    public AuthResponse login(LoginRequest loginRequestDto) {
         Optional<User> optionalUser = userRepository.findByEmail(loginRequestDto.getEmail());
 
         if (optionalUser.isEmpty() || !passwordEncoder.matches(loginRequestDto.getPassword(), optionalUser.get().getPassword())) {
@@ -84,16 +83,17 @@ public class AuthService implements IAuthService {
         user.setRefreshTokenExpiry(System.currentTimeMillis() / 1000 + (30 * 24 * 60 * 60));
         userRepository.save(user);
 
-        DtoAuthResponse response = new DtoAuthResponse();
-        response.setAccessToken(accessToken);
-        response.setRefreshToken(refreshToken);
-        response.setExpireAt(jwtClaim.getExp());
+        AuthResponse response = AuthResponse.builder()
+            .accessToken(accessToken)
+            .refreshToken(refreshToken)
+            .expireAt(jwtClaim.getExp())
+            .build();
         return response;
 
     }
 
     @Override
-    public void register(DtoRegisterIU registerRequestDto) {
+    public void register(RegisterRequest registerRequestDto) {
         if (userRepository.findByEmail(registerRequestDto.getEmail()) != null) {
             throw new UnauthorizedException("A user with this email already exists.");
         }
@@ -118,7 +118,7 @@ public class AuthService implements IAuthService {
     }
 
     @Override
-    public void verifyEmail(DtoVerifyEmailIU dto) {
+    public void verifyEmail(VerifyEmailRequest dto) {
         Optional<User> optionalUser = userRepository.findByEmail(dto.getEmail());
         if (optionalUser.isEmpty()) {
             throw new ResourceNotFoundException("User not found.");
@@ -136,7 +136,7 @@ public class AuthService implements IAuthService {
     }
 
     @Override
-    public void forgotPassword(DtoForgotPasswordIU forgotPasswordRequestDto) {
+    public void forgotPassword(ForgotPasswordRequest forgotPasswordRequestDto) {
         Optional<User> optionalUser = userRepository.findByEmail(forgotPasswordRequestDto.getEmail());
         
         if (optionalUser.isEmpty()) {
@@ -161,7 +161,7 @@ public class AuthService implements IAuthService {
     }
 
     @Override
-    public void resetPassword(DtoResetPasswordIU resetPasswordRequestDto) {
+    public void resetPassword(ResetPasswordRequest resetPasswordRequestDto) {
         if (!passwordResetRedisRepository.isValidToken(resetPasswordRequestDto.getToken())) {
             throw new UnauthorizedException("Invalid or expired reset token.");
         }
