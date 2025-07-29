@@ -16,6 +16,8 @@ import com.hiveform.exception.ResourceNotFoundException;
 import com.hiveform.exception.ForbiddenException;
 import com.hiveform.entities.User;
 import com.hiveform.repository.UserRepository;
+import com.hiveform.dto.submission.GetSubmissionsRequest;
+import com.hiveform.dto.submission.DeleteSubmissionRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -117,8 +119,8 @@ public class SubmissionService implements ISubmissionService {
     }
 
     @Override
-    public SubmissionListResponse getSubmissionsByFormId(String formId, int page, int size) {
-        Optional<Form> formOptional = formRepository.findById(UUID.fromString(formId));
+    public SubmissionListResponse getSubmissionsByFormId(GetSubmissionsRequest request) {
+        Optional<Form> formOptional = formRepository.findById(UUID.fromString(request.getFormId()));
 
         if (formOptional.isEmpty()) {
             throw new ResourceNotFoundException("Form not found");
@@ -126,15 +128,15 @@ public class SubmissionService implements ISubmissionService {
         
         Form form = formOptional.get();
         
-        Pageable pageable = PageRequest.of(page - 1, size);
+        Pageable pageable = PageRequest.of(request.getPage() - 1, request.getSize());
         Page<Submission> submissionPage = submissionRepository.findByFormId(form.getId(), pageable);
         
         return buildSubmissionListResponse(submissionPage);
     }
 
     @Override
-    public SubmissionListResponse getUserFormSubmissions(String formId, String userId, int page, int size) {
-        Optional<Form> formOptional = formRepository.findById(UUID.fromString(formId));
+    public SubmissionListResponse getUserFormSubmissions(GetSubmissionsRequest request) {
+        Optional<Form> formOptional = formRepository.findById(UUID.fromString(request.getFormId()));
 
         if (formOptional.isEmpty()) {
             throw new ResourceNotFoundException("Form not found");
@@ -142,11 +144,11 @@ public class SubmissionService implements ISubmissionService {
         
         Form form = formOptional.get();
         
-        if (!form.getUser().getId().toString().equals(userId)) {
+        if (!form.getUser().getId().toString().equals(request.getUserId())) {
             throw new ForbiddenException("You don't have permission to view submissions for this form");
         }
         
-        Pageable pageable = PageRequest.of(page - 1, size);
+        Pageable pageable = PageRequest.of(request.getPage() - 1, request.getSize());
         Page<Submission> submissionPage = submissionRepository.findByFormId(form.getId(), pageable);
         
         return buildSubmissionListResponse(submissionPage);
@@ -154,8 +156,8 @@ public class SubmissionService implements ISubmissionService {
 
     @Override
     @Transactional
-    public void deleteSubmission(String submissionId, String userId) {
-        Optional<Submission> submissionOptional = submissionRepository.findById(UUID.fromString(submissionId));
+    public void deleteSubmission(DeleteSubmissionRequest request) {
+        Optional<Submission> submissionOptional = submissionRepository.findById(UUID.fromString(request.getSubmissionId()));
 
         if (submissionOptional.isEmpty()) {
             throw new ResourceNotFoundException("Submission not found");
@@ -163,8 +165,7 @@ public class SubmissionService implements ISubmissionService {
 
         Submission submission = submissionOptional.get();
 
-
-        if (!submission.getForm().getUser().getId().toString().equals(userId)) {
+        if (!submission.getForm().getUser().getId().toString().equals(request.getUserId())) {
              throw new ForbiddenException("You don't have permission to delete this submission");
         }
         

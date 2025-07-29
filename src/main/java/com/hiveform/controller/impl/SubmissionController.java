@@ -13,6 +13,8 @@ import com.hiveform.dto.submission.SubmissionResponse;
 import com.hiveform.dto.submission.SubmissionListResponse;
 import com.hiveform.services.ISubmissionService;
 import com.hiveform.security.JwtClaim;
+import com.hiveform.dto.submission.GetSubmissionsRequest;
+import com.hiveform.dto.submission.DeleteSubmissionRequest;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -62,7 +64,14 @@ public class SubmissionController implements ISubmissionController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
         
-        SubmissionListResponse response = submissionService.getUserFormSubmissions(formId, jwtClaim.getUserId(), page, size);
+        GetSubmissionsRequest getSubmissionsRequest = GetSubmissionsRequest.builder()
+                .formId(formId)
+                .userId(jwtClaim.getUserId())
+                .page(page)
+                .size(size)
+                .build();
+        
+        SubmissionListResponse response = submissionService.getUserFormSubmissions(getSubmissionsRequest);
         return ResponseEntity.ok(RootResponse.success(response, "Form submissions retrieved successfully", request.getRequestURI()));
     }
 
@@ -73,7 +82,12 @@ public class SubmissionController implements ISubmissionController {
             @AuthenticationPrincipal JwtClaim jwtClaim,
             HttpServletRequest request) {
         
-        submissionService.deleteSubmission(submissionId, jwtClaim.getUserId());
+        DeleteSubmissionRequest deleteRequest = DeleteSubmissionRequest.builder()
+                .submissionId(submissionId)
+                .userId(jwtClaim.getUserId())
+                .build();
+        
+        submissionService.deleteSubmission(deleteRequest);
         return ResponseEntity.ok(RootResponse.success(null, "Submission deleted successfully", request.getRequestURI()));
     }
 }
