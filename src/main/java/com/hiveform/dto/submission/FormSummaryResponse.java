@@ -29,23 +29,18 @@ public class FormSummaryResponse {
         private Integer questionIndex;
         private Long totalAnswers;
         
-        // For text questions (SHORT_TEXT, LONG_TEXT, EMAIL, URL, NUMBER)
         private List<TextAnswerSample> textAnswerSamples;
         private Long textAnswerCount;
         
-        // For choice questions (SINGLE_CHOICE, MULTIPLE_CHOICE, DROPDOWN)
         private List<ChoiceOptionStats> choiceOptionStats;
         
-        // For rating questions
         private Double averageRating;
         private Map<Integer, Long> ratingDistribution; // rating -> count
         private Long ratingCount;
         
-        // For date/time questions
         private List<DateTimeAnswerSample> dateTimeAnswerSamples;
         private Long dateTimeAnswerCount;
         
-        // For file upload questions
         private Long fileUploadCount;
     }
     
@@ -56,7 +51,6 @@ public class FormSummaryResponse {
     public static class TextAnswerSample {
         private String answerText;
         private Long count;
-        private String percentage;
     }
     
     @Data
@@ -66,7 +60,6 @@ public class FormSummaryResponse {
     public static class ChoiceOptionStats {
         private String option;
         private Long count;
-        private String percentage;
     }
     
     @Data
@@ -76,6 +69,5 @@ public class FormSummaryResponse {
     public static class DateTimeAnswerSample {
         private String dateTimeValue;
         private Long count;
-        private String percentage;
     }
 } 

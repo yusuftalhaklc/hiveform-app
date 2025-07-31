@@ -2,6 +2,8 @@ package com.hiveform.dto.submission;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -17,12 +19,12 @@ import lombok.Builder;
 @Builder
 public class SubmissionRequest {
     
-    @NotBlank(message = "Form ID is required")
-    private String formId;
-    
     @NotEmpty(message = "At least one answer is required")
     @Valid
     private List<AnswerRequest> answers;
+
+    @JsonIgnore
+    private String formId;
     
     @Data
     @NoArgsConstructor

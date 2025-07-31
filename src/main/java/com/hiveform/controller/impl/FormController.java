@@ -12,8 +12,15 @@ import com.hiveform.dto.form.FormRequest;
 import com.hiveform.dto.form.FormUpdateRequest;
 import com.hiveform.dto.form.FormListPageResponse;
 import com.hiveform.dto.form.GetUserFormsRequest;
+import com.hiveform.dto.submission.FormSummaryResponse;
+import com.hiveform.dto.submission.GetFormSummaryRequest;
+import com.hiveform.dto.submission.GetSubmissionsRequest;
+import com.hiveform.dto.submission.SubmissionListResponse;
+import com.hiveform.dto.submission.SubmissionRequest;
+import com.hiveform.dto.submission.SubmissionResponse;
 import com.hiveform.dto.form.FormDeleteRequest;
 import com.hiveform.services.IFormService;
+import com.hiveform.services.ISubmissionService;
 import com.hiveform.security.JwtClaim;
 
 import org.springframework.web.bind.annotation.RequestBody;
@@ -38,6 +45,9 @@ public class FormController implements IFormController {
 
     @Autowired
     private IFormService formService;
+
+    @Autowired
+    private ISubmissionService submissionService;
 
     @PostMapping("")
     public ResponseEntity<ApiResponse<FormResponse>> createForm(@Valid @RequestBody FormRequest createFormRequestDto, @AuthenticationPrincipal JwtClaim jwtClaim, HttpServletRequest request) {
@@ -80,6 +90,66 @@ public class FormController implements IFormController {
         GetUserFormsRequest requestDto = new GetUserFormsRequest(page, size);
         FormListPageResponse response = formService.getUserForms(jwtClaim.getUserId(), requestDto);
         return ResponseEntity.ok(RootResponse.success(response, "User forms retrieved successfully", request.getRequestURI()));
+    }
+
+
+    @PostMapping("/{formId}/submit")
+    @Override
+    public ResponseEntity<ApiResponse<SubmissionResponse>> submitForm(
+            @Valid @RequestBody SubmissionRequest submissionRequest,
+            @PathVariable String formId,
+            @AuthenticationPrincipal JwtClaim jwtClaim,
+            HttpServletRequest request) {
+        submissionRequest.setFormId(formId);        
+        String userId = null;
+        if (jwtClaim != null) {
+            userId = jwtClaim.getUserId();
+        }
+        
+        SubmissionResponse response = submissionService.createSubmission(submissionRequest, userId);
+        return ResponseEntity.ok(RootResponse.success(response, "Form submitted successfully", request.getRequestURI()));
+    }
+
+
+    @GetMapping("/{formId}/summary")
+    @Override
+    public ResponseEntity<ApiResponse<FormSummaryResponse>> getFormSummary(
+            @PathVariable String formId,
+            @AuthenticationPrincipal JwtClaim jwtClaim,
+            HttpServletRequest request,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        
+        GetFormSummaryRequest getFormSummaryRequest = GetFormSummaryRequest.builder()
+                .formId(formId)
+                .userId(jwtClaim.getUserId())
+                .page(page)
+                .size(size)
+                .build();
+        
+        FormSummaryResponse response = submissionService.getFormSummary(getFormSummaryRequest);
+        return ResponseEntity.ok(RootResponse.success(response, "Form summary retrieved successfully", request.getRequestURI()));
+    }
+    
+
+    @GetMapping("/{formId}/submissions")
+    @Override
+    public ResponseEntity<ApiResponse<SubmissionListResponse>> getSubmissionsByFormId(
+            @PathVariable String formId,
+            @AuthenticationPrincipal JwtClaim jwtClaim,
+            HttpServletRequest request,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        
+        GetSubmissionsRequest getSubmissionsRequest = GetSubmissionsRequest.builder()
+                .formId(formId)
+                .userId(jwtClaim.getUserId())
+                .page(page)
+                .size(size)
+                .build();
+        
+        SubmissionListResponse response = submissionService.getUserFormSubmissions(getSubmissionsRequest);
+        return ResponseEntity.ok(RootResponse.success(response, "Form submissions retrieved successfully", request.getRequestURI()));
     }
 
 }

@@ -11,6 +11,7 @@ import com.hiveform.repository.AnswerRepository;
 import com.hiveform.services.ISubmissionService;
 import com.hiveform.dto.submission.SubmissionRequest;
 import com.hiveform.dto.submission.SubmissionResponse;
+import com.hiveform.dto.user.UserInfoResponse;
 import com.hiveform.dto.submission.SubmissionListResponse;
 import com.hiveform.exception.ResourceNotFoundException;
 import com.hiveform.exception.ForbiddenException;
@@ -35,10 +36,14 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.HashMap;
 
 @Service
@@ -195,7 +200,6 @@ public class SubmissionService implements ISubmissionService {
         submissionRepository.delete(submission);
     }
 
-    // New methods for form owner views
     @Override
     public FormSummaryResponse getFormSummary(GetFormSummaryRequest request) {
         Optional<Form> formOptional = formRepository.findById(UUID.fromString(request.getFormId()));
@@ -206,15 +210,12 @@ public class SubmissionService implements ISubmissionService {
         
         Form form = formOptional.get();
         
-        // Check if user owns the form
         if (!form.getUser().getId().toString().equals(request.getUserId())) {
             throw new ForbiddenException("You don't have permission to view this form summary");
         }
         
-        // Get total submissions count
         Long totalSubmissions = submissionRepository.countByFormId(form.getId());
         
-        // Get all questions for the form
         List<Question> questions = questionRepository.findByFormIdOrderByQuestionIndex(form.getId());
         
         List<FormSummaryResponse.QuestionSummary> questionSummaries = questions.stream()
@@ -239,7 +240,6 @@ public class SubmissionService implements ISubmissionService {
         
         Form form = formOptional.get();
         
-        // Check if user owns the form
         if (!form.getUser().getId().toString().equals(request.getUserId())) {
             throw new ForbiddenException("You don't have permission to view this question detail");
         }
@@ -252,14 +252,12 @@ public class SubmissionService implements ISubmissionService {
         
         Question question = questionOptional.get();
         
-        // Get all answers for this question with pagination
         Pageable pageable = PageRequest.of(request.getPage() - 1, request.getSize());
         Page<Answer> answerPage = answerRepository.findByQuestionIdOrderBySubmissionSubmittedAtDesc(
                 question.getId(), pageable);
         
         List<QuestionDetailResponse.QuestionAnswer> answers = answerPage.getContent().stream()
                 .map(answer -> {
-                    // Get user details if submissionBy is not null
                     String submissionByUser = null;
                     if (answer.getSubmission().getSubmissionBy() != null) {
                         try {
@@ -269,7 +267,6 @@ public class SubmissionService implements ISubmissionService {
                                 submissionByUser = user.getFullName();
                             }
                         } catch (Exception e) {
-                            // User not found or invalid UUID, leave as null
                         }
                     }
                     
@@ -343,48 +340,61 @@ public class SubmissionService implements ISubmissionService {
             case FILE_UPLOAD:
                 summaryBuilder.fileUploadCount(totalAnswers);
                 break;
+                
+            default:
+                break;
         }
         
         return summaryBuilder.build();
     }
     
     private List<FormSummaryResponse.TextAnswerSample> buildTextAnswerSamples(List<Answer> answers, int page, int size) {
-        // Get paginated text answers
-        int startIndex = (page - 1) * size;
-        int endIndex = Math.min(startIndex + size, answers.size());
-        
-        if (startIndex >= answers.size()) {
+        if (page < 1 || size < 1) {
             return new ArrayList<>();
         }
         
-        return answers.subList(startIndex, endIndex).stream()
-                .map(answer -> FormSummaryResponse.TextAnswerSample.builder()
-                        .answerText(answer.getAnswerText())
-                        .count(1L)
-                        .percentage("100%") // Since we're showing individual answers
+        Map<String, Long> answerCounts = answers.stream()
+                .map(Answer::getAnswerText)
+                .filter(Objects::nonNull)
+                .filter(text -> !text.trim().isEmpty())
+                .map(String::trim)
+                .collect(Collectors.groupingBy(
+                        Function.identity(),
+                        Collectors.counting()
+                ));
+        
+        List<FormSummaryResponse.TextAnswerSample> allSamples = answerCounts.entrySet().stream()
+                .map(entry -> FormSummaryResponse.TextAnswerSample.builder()
+                        .answerText(entry.getKey())
+                        .count(entry.getValue())
                         .build())
+                .sorted((a, b) -> b.getCount().compareTo(a.getCount()))
                 .collect(Collectors.toList());
+        
+        int startIndex = (page - 1) * size;
+        if (startIndex >= allSamples.size()) {
+            return new ArrayList<>();
+        }
+        
+        int endIndex = Math.min(startIndex + size, allSamples.size());
+        return allSamples.subList(startIndex, endIndex);
     }
     
     private List<FormSummaryResponse.ChoiceOptionStats> buildChoiceOptionStats(List<Answer> answers) {
         Map<String, Long> optionCounts = answers.stream()
-                .filter(answer -> answer.getSelectedOption() != null)
+                .map(Answer::getSelectedOption)
+                .filter(Objects::nonNull)
+                .filter(option -> !option.trim().isEmpty())
                 .collect(Collectors.groupingBy(
-                        Answer::getSelectedOption,
+                        String::trim,
                         Collectors.counting()
                 ));
-        
-        long total = optionCounts.values().stream().mapToLong(Long::longValue).sum();
-        
+                
         return optionCounts.entrySet().stream()
-                .map(entry -> {
-                    double percentage = total > 0 ? (entry.getValue() * 100.0) / total : 0.0;
-                    return FormSummaryResponse.ChoiceOptionStats.builder()
-                            .option(entry.getKey())
-                            .count(entry.getValue())
-                            .percentage(String.format("%.1f%%", percentage))
-                            .build();
-                })
+                .map(entry -> FormSummaryResponse.ChoiceOptionStats.builder()
+                        .option(entry.getKey())
+                        .count(entry.getValue())
+                        .build())
                 .sorted((a, b) -> b.getCount().compareTo(a.getCount()))
                 .collect(Collectors.toList());
     }
@@ -393,72 +403,82 @@ public class SubmissionService implements ISubmissionService {
         Map<String, Long> optionCounts = new HashMap<>();
         
         answers.stream()
-                .filter(answer -> answer.getSelectedOptions() != null)
-                .forEach(answer -> {
-                    answer.getSelectedOptions().forEach(option -> {
-                        optionCounts.put(option, optionCounts.getOrDefault(option, 0L) + 1);
-                    });
-                });
-        
-        long total = optionCounts.values().stream().mapToLong(Long::longValue).sum();
+                .map(Answer::getSelectedOptions)
+                .filter(Objects::nonNull)
+                .filter(options -> !options.isEmpty())
+                .flatMap(Collection::stream)
+                .filter(Objects::nonNull)
+                .filter(option -> !option.trim().isEmpty())
+                .map(String::trim)
+                .forEach(option -> optionCounts.merge(option, 1L, Long::sum));
         
         return optionCounts.entrySet().stream()
-                .map(entry -> {
-                    double percentage = total > 0 ? (entry.getValue() * 100.0) / total : 0.0;
-                    return FormSummaryResponse.ChoiceOptionStats.builder()
-                            .option(entry.getKey())
-                            .count(entry.getValue())
-                            .percentage(String.format("%.1f%%", percentage))
-                            .build();
-                })
+                .map(entry -> FormSummaryResponse.ChoiceOptionStats.builder()
+                        .option(entry.getKey())
+                        .count(entry.getValue())
+                        .build())
                 .sorted((a, b) -> b.getCount().compareTo(a.getCount()))
                 .collect(Collectors.toList());
     }
     
     private Double calculateAverageRating(List<Answer> answers) {
-        return answers.stream()
-                .filter(answer -> answer.getSelectedRating() != null)
-                .mapToInt(Answer::getSelectedRating)
-                .average()
-                .orElse(0.0);
+        OptionalDouble average = answers.stream()
+                .map(Answer::getSelectedRating)
+                .filter(Objects::nonNull)
+                .mapToInt(Integer::intValue)
+                .average();
+                
+        return average.isPresent() ? average.getAsDouble() : 0.0;
     }
     
     private Map<Integer, Long> buildRatingDistribution(List<Answer> answers) {
         return answers.stream()
-                .filter(answer -> answer.getSelectedRating() != null)
+                .map(Answer::getSelectedRating)
+                .filter(Objects::nonNull)
                 .collect(Collectors.groupingBy(
-                        Answer::getSelectedRating,
+                        Function.identity(),
                         Collectors.counting()
                 ));
     }
     
     private List<FormSummaryResponse.DateTimeAnswerSample> buildDateTimeAnswerSamples(List<Answer> answers, int page, int size) {
-        // Get paginated date/time answers
-        int startIndex = (page - 1) * size;
-        int endIndex = Math.min(startIndex + size, answers.size());
-        
-        if (startIndex >= answers.size()) {
+        if (page < 1 || size < 1) {
             return new ArrayList<>();
         }
         
-        return answers.subList(startIndex, endIndex).stream()
+        Map<String, Long> dateTimeCounts = answers.stream()
                 .map(answer -> {
-                    String dateTimeValue = null;
                     if (answer.getSelectedDate() != null) {
-                        dateTimeValue = answer.getSelectedDate().toString();
+                        return answer.getSelectedDate().toString();
                     } else if (answer.getSelectedTime() != null) {
-                        dateTimeValue = answer.getSelectedTime().toString();
+                        return answer.getSelectedTime().toString();
                     }
-                    
-                    return FormSummaryResponse.DateTimeAnswerSample.builder()
-                            .dateTimeValue(dateTimeValue)
-                            .count(1L)
-                            .percentage("100%") // Since we're showing individual answers
-                            .build();
+                    return null;
                 })
+                .filter(Objects::nonNull)
+                .collect(Collectors.groupingBy(
+                        Function.identity(),
+                        Collectors.counting()
+                ));
+        
+        List<FormSummaryResponse.DateTimeAnswerSample> allSamples = dateTimeCounts.entrySet().stream()
+                .map(entry -> FormSummaryResponse.DateTimeAnswerSample.builder()
+                        .dateTimeValue(entry.getKey())
+                        .count(entry.getValue())
+                        .build())
+                .sorted((a, b) -> b.getCount().compareTo(a.getCount()))
                 .collect(Collectors.toList());
+        
+                
+        int startIndex = (page - 1) * size;
+        if (startIndex >= allSamples.size()) {
+            return new ArrayList<>();
+        }
+        
+        int endIndex = Math.min(startIndex + size, allSamples.size());
+        return allSamples.subList(startIndex, endIndex);
     }
-
+   
     private SubmissionResponse buildSubmissionResponse(Submission submission, List<Answer> answers) {
         List<SubmissionResponse.AnswerResponse> answerResponses = answers.stream()
                 .map(answer -> SubmissionResponse.AnswerResponse.builder()
@@ -476,20 +496,18 @@ public class SubmissionService implements ISubmissionService {
                         .build())
                 .collect(Collectors.toList());
 
-        SubmissionResponse.SubmissionByUser submissionByUser = null;
+        UserInfoResponse submissionByUser = null;
         if (submission.getSubmissionBy() != null) {
             try {
                 User user = userRepository.findById(UUID.fromString(submission.getSubmissionBy()))
                         .orElse(null);
                 if (user != null) {
-                    submissionByUser = SubmissionResponse.SubmissionByUser.builder()
+                    submissionByUser = UserInfoResponse.builder()
                             .id(user.getId().toString())
                             .fullName(user.getFullName())
-                            .email(user.getEmail())
                             .build();
                 }
             } catch (Exception e) {
-                // User not found or invalid UUID, leave as null
             }
         }
 
@@ -498,8 +516,7 @@ public class SubmissionService implements ISubmissionService {
                 .formId(submission.getForm().getId().toString())
                 .formTitle(submission.getForm().getTitle())
                 .submittedAt(submission.getSubmittedAt())
-                .submissionBy(submission.getSubmissionBy())
-                .submissionByUser(submissionByUser)
+                .submissionBy(submissionByUser)
                 .answers(answerResponses)
                 .build();
     }
@@ -522,7 +539,6 @@ public class SubmissionService implements ISubmissionService {
                                         .build();
                             }
                         } catch (Exception e) {
-                            // User not found or invalid UUID, leave as null
                         }
                     }
                     

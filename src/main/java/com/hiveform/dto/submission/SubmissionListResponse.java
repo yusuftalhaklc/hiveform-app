@@ -27,8 +27,8 @@ public class SubmissionListResponse {
         private String formId;
         private String formTitle;
         private Long submittedAt;
-        private String submissionBy; // UUID as string
-        private SubmissionByUser submissionByUser; // User details if available
+        private String submissionBy;
+        private SubmissionByUser submissionByUser;
         private int answerCount;
     }
     

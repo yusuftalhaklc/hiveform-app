@@ -16,6 +16,7 @@ import com.hiveform.dto.auth.RegisterRequest;
 import com.hiveform.dto.auth.ResetPasswordRequest;
 import com.hiveform.dto.auth.VerifyEmailRequest;
 import com.hiveform.dto.auth.AuthResponse;
+import com.hiveform.controller.IAuthController;
 import com.hiveform.dto.ApiResponse;
 import com.hiveform.dto.RootResponse;
 
@@ -27,7 +28,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RestController
 @RequestMapping("/api/auth")
 @Tag(name = "Auth", description = "Authentication API")
-public class AuthController {
+public class AuthController implements IAuthController {
 
     @Autowired
     private IAuthService authService;
@@ -42,14 +43,22 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<String>> register(@Valid @RequestBody RegisterRequest registerRequestDto, HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<Void>> register(@Valid @RequestBody RegisterRequest registerRequestDto, HttpServletRequest request) {
         authService.register(registerRequestDto);
         return ResponseEntity.ok(RootResponse.success(null, "Registration successful and email verification sent", request.getRequestURI()));
     }
 
-    @PostMapping("/verify")
-    public ResponseEntity<ApiResponse<Void>> verifyEmail(@Valid @RequestBody VerifyEmailRequest dto, HttpServletRequest request) {
-        authService.verifyEmail(dto);
+    @GetMapping("/verify")
+    public ResponseEntity<ApiResponse<Void>> verifyEmail(
+        @RequestParam String email, 
+        @RequestParam String code, 
+        HttpServletRequest request) {
+        VerifyEmailRequest verifyEmailRequest = VerifyEmailRequest.builder()
+                .email(email)
+                .code(code)
+                .build();
+        
+        authService.verifyEmail(verifyEmailRequest);
         return ResponseEntity.ok(RootResponse.success(null, "Email verification successful", request.getRequestURI()));
     }
 
@@ -76,5 +85,4 @@ public class AuthController {
         authService.resetPassword(resetPasswordRequestDto);
         return ResponseEntity.ok(RootResponse.success(null, "Password reset successful", request.getRequestURI()));
     }
-
 }

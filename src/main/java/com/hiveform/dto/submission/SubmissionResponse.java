@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import com.hiveform.dto.user.UserInfoResponse;
 
 @Data
 @NoArgsConstructor
@@ -16,20 +17,9 @@ public class SubmissionResponse {
     private String formId;
     private String formTitle;
     private Long submittedAt;
-    private String submissionBy; // UUID as string
-    private SubmissionByUser submissionByUser; // User details if available
+    private UserInfoResponse submissionBy; 
     private List<AnswerResponse> answers;
-    
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class SubmissionByUser {
-        private String id;
-        private String fullName;
-        private String email;
-    }
-    
+
     @Data
     @NoArgsConstructor
     @AllArgsConstructor

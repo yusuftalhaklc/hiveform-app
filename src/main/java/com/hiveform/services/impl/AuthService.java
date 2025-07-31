@@ -94,7 +94,9 @@ public class AuthService implements IAuthService {
 
     @Override
     public void register(RegisterRequest registerRequestDto) {
-        if (userRepository.findByEmail(registerRequestDto.getEmail()) != null) {
+        Optional<User> optionalUser = userRepository.findByEmail(registerRequestDto.getEmail());
+
+        if (optionalUser.isPresent()) {
             throw new UnauthorizedException("A user with this email already exists.");
         }
 
@@ -109,12 +111,17 @@ public class AuthService implements IAuthService {
         user.setIsActive(true);
         user.setPassword(passwordEncoder.encode(registerRequestDto.getPassword()));
 
-        String verificationCode = tokenGenerator.generateSecureToken(64);
+        String verificationCode = tokenGenerator.generateSecureToken(32);
         user.setEmailVerificationCode(verificationCode);
 
         userRepository.save(user);
 
-        emailService.sendVerificationEmail(user.getEmail(), verificationCode);
+        try {
+            emailService.sendVerificationEmail(user.getEmail(), verificationCode);
+        } catch (Exception e) {
+            e.printStackTrace();
+            // log.error("Doğrulama maili gönderilemedi", e);
+        }
     }
 
     @Override
